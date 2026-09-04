@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="inicio">
+    <svg class="hero__wave" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-100 200 L250 500 L600 150 L950 480 L1300 180"
+            fill="none" stroke="url(#heroGrad)" stroke-width="2" opacity="0.5"/>
+      <path d="M-100 320 L250 620 L600 270 L950 600 L1300 300"
+            fill="none" stroke="url(#heroGrad)" stroke-width="1.5" opacity="0.25"/>
+      <defs>
+        <linearGradient id="heroGrad" x1="0" y1="0" x2="1200" y2="700" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#00C2FF"/>
+          <stop offset="1" stop-color="#8AE7FF"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <div class="hero__content">
+      <p class="hero__kicker">Software para microempresas</p>
+      <h1 class="hero__title">De lo que necesitas<br>a lo que imaginas.</h1>
+      <p class="hero__subtitle">
+        NOXTIUM convierte la tecnología en soluciones simples y modulares
+        para que tu negocio crezca: empieza con un módulo y agrega más
+        capacidades a medida que lo necesitas.
+      </p>
+      <div class="hero__cta">
+        <a href="#contacto" class="btn btn--primary btn--lg">Hablemos de tu negocio</a>
+        <a href="#nosotros" class="btn btn--ghost btn--lg">Conocer más</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SOBRE NOSOTROS ============ -->
+  <section class="about" id="nosotros">
+    <div class="about__inner">
+      <div class="about__intro">
+        <h2>Quiénes somos</h2>
+        <p>
+          Somos una empresa de software que diseña soluciones modulares
+          para resolver problemas reales de operación, ventas, inventario
+          y administración en pequeños negocios, sin la complejidad de
+          un sistema hecho para una empresa grande.
+        </p>
+      </div>
+
+      <div class="about__pillars">
+        <div class="pillar">
+          <span class="pillar__mark"></span>
+          <h3>Propósito</h3>
+          <p>Impulsar a las microempresas mediante tecnología práctica, accesible y fácil de usar.</p>
+        </div>
+        <div class="pillar">
+          <span class="pillar__mark"></span>
+          <h3>Misión</h3>
+          <p>Ofrecer software modular que reduce la complejidad tecnológica para los pequeños negocios.</p>
+        </div>
+        <div class="pillar">
+          <span class="pillar__mark"></span>
+          <h3>Visión</h3>
+          <p>Ser la plataforma de referencia en Latinoamérica para la digitalización progresiva de microempresas.</p>
+        </div>
+      </div>
+
+      <!-- Arquitectura modular: representada como un flujo conectado,
+           porque así es como funciona el producto (módulos que se
+           conectan entre sí), no como una decoración. -->
+      <div class="modules">
+        <h3 class="modules__title">Un ecosistema de módulos conectables</h3>
+        <div class="modules__flow">
+          <div class="module-node"><span>Caja y meseros</span></div>
+          <div class="module-node"><span>Menú digital</span></div>
+          <div class="module-node"><span>Inventario</span></div>
+          <div class="module-node"><span>Clientes</span></div>
+          <div class="module-node"><span>Reportes</span></div>
+        </div>
+        <p class="modules__note">Empieza con el módulo que tu negocio necesita hoy y suma el resto cuando estés listo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACTO ============ -->
+  <section class="contact" id="contacto">
+    <div class="contact__inner">
+      <div class="contact__text">
+        <h2>Hablemos de tu negocio</h2>
+        <p>
+          Cuéntanos qué proceso te quita más tiempo hoy. Déjanos tu
+          correo y te contactaremos para mostrarte cómo NOXTIUM puede
+          ayudarte.
+        </p>
+      </div>
+
+      <form class="contact__form" action="{{ url_for('contacto') }}" method="POST">
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required>
+
+        <label for="correo">Correo</label>
+        <input type="email" id="correo" name="correo" placeholder="tucorreo@ejemplo.com" required>
+
+        <label for="mensaje">Mensaje (opcional)</label>
+        <textarea id="mensaje" name="mensaje" rows="4" placeholder="Cuéntanos brevemente qué necesitas"></textarea>
+
+        <button type="submit" class="btn btn--primary btn--lg">Enviar</button>
+      </form>
+    </div>
+  </section>
+
+{% endblock %}

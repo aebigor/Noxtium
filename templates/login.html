@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar sesión · NOXTIUM{% endblock %}
+
+{% block content %}
+  <section class="simple-page">
+    <div class="simple-page__card">
+      <h1>Iniciar sesión</h1>
+      <p>
+        El acceso a la plataforma NOXTIUM está en construcción.
+        Muy pronto podrás iniciar sesión desde aquí para administrar
+        los módulos de tu negocio.
+      </p>
+
+      <!-- Formulario visual, aún no conectado a un sistema de usuarios real.
+           Aquí es donde un desarrollador junior conectaría más adelante
+           la autenticación (por ejemplo con Flask-Login). -->
+      <form class="simple-page__form">
+        <label for="login-correo">Correo</label>
+        <input type="email" id="login-correo" placeholder="tucorreo@ejemplo.com" disabled>
+
+        <label for="login-clave">Contraseña</label>
+        <input type="password" id="login-clave" placeholder="••••••••" disabled>
+
+        <button type="button" class="btn btn--primary btn--lg" disabled>Próximamente</button>
+      </form>
+
+      <a class="simple-page__back" href="{{ url_for('inicio') }}">← Volver al inicio</a>
+    </div>
+  </section>
+{% endblock %}
