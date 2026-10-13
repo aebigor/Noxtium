@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Servicio no activo · NOXTIUM{% endblock %}
+{% block content %}<section class="locked-page"><div class="locked-card"><div class="lock-icon">🔒</div><div class="eyebrow">ACCESO RESTRINGIDO</div><h1>Primero activa tu servicio</h1><p>La configuración de WhatsApp y el CRM están disponibles únicamente para clientes con una suscripción activa.</p><a class="btn btn--primary btn--lg" href="{{ url_for('portal.service_detail', slug='crm-chatbot') }}">Contratar CRM + Chatbot</a><a class="simple-page__back" href="{{ url_for('portal.dashboard') }}">← Volver al dashboard</a></div></section>{% endblock %}

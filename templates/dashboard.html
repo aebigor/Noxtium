@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · NOXTIUM{% endblock %}
+{% block content %}
+<section class="dashboard-shell">
+  <div class="dashboard-head">
+    <div><div class="eyebrow">CENTRO DE CONTROL</div><h1>Hola, {{ user.full_name.split(' ')[0] }}.</h1><p>Administra tus servicios NOXTIUM desde un solo lugar.</p></div>
+    <div class="account-state {% if subscription %}state-active{% else %}state-pending{% endif %}"><span class="status-dot"></span>{% if subscription %}Servicio activo{% else %}Sin servicio activo{% endif %}</div>
+  </div>
+
+  {% if not subscription %}
+  <div class="notice-card notice-card--accent"><div class="notice-icon">✦</div><div><strong>Activa tu primer servicio</strong><p>Tu cuenta ya está creada. Elige un servicio, realiza el pago y desbloquearemos las herramientas correspondientes.</p></div><a class="btn btn--primary" href="#servicios">Ver servicios</a></div>
+  {% else %}
+  <div class="hero-service-card"><div><span class="service-badge">ACTIVO</span><h2>{{ subscription.plan.service.icon }} {{ subscription.plan.service.name }}</h2><p>{{ subscription.plan.service.description }}</p></div><div class="service-card-actions"><span class="price">${{ "{:,.0f}".format(subscription.plan.price).replace(',', '.') }} <small>COP / mes</small></span>{% if whatsapp %}<a class="btn btn--primary" href="{{ url_for('meta.whatsapp_page') }}">Abrir configuración</a>{% else %}<a class="btn btn--primary" href="{{ url_for('meta.whatsapp_page') }}">Conectar WhatsApp</a>{% endif %}</div></div>
+  {% endif %}
+
+  {% if pending %}
+  <div class="notice-card notice-card--warning"><div class="notice-icon">!</div><div><strong>Hay un pago pendiente</strong><p>{{ pending.plan.service.name }} · {{ pending.plan.name }}. El servicio seguirá bloqueado hasta que el pago sea confirmado.</p></div><a class="btn btn--ghost" href="{{ url_for('portal.payment', subscription_id=pending.id) }}">Ver pago</a></div>
+  {% endif %}
+
+  <div class="section-heading" id="servicios"><div><div class="eyebrow">CATÁLOGO</div><h2>Servicios de NOXTIUM</h2></div><span>Activa solo lo que necesitas.</span></div>
+  <div class="service-grid">
+    {% for service in services %}
+    <article class="service-card {% if service.slug == 'crm-chatbot' %}service-card--featured{% endif %}">
+      {% if service.slug == 'crm-chatbot' %}<div class="featured-label">RECOMENDADO</div>{% endif %}
+      <div class="service-icon">{{ service.icon }}</div><h3>{{ service.name }}</h3><p>{{ service.description }}</p>
+      {% if service.slug == 'crm-chatbot' %}<ul>{% for item in service.plans[0].features %}<li>✓ {{ item }}</li>{% endfor %}</ul>{% else %}<ul><li>Disponible próximamente</li><li>Diseñado para integrarse con NOXTIUM</li></ul>{% endif %}
+      {% if service.slug == 'crm-chatbot' %}<a class="btn btn--primary full" href="{{ url_for('portal.service_detail', slug=service.slug) }}">{% if subscription %}Administrar servicio{% else %}Conocer y contratar{% endif %}</a>{% else %}<button class="btn btn--ghost full" disabled>Próximamente</button>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="section-heading"><div><div class="eyebrow">WHATSAPP</div><h2>Canal de atención</h2></div></div>
+  <div class="whatsapp-module {% if whatsapp %}is-connected{% endif %}">
+    <div class="wa-symbol">⌁</div><div class="wa-content"><h3>{% if whatsapp %}WhatsApp Business conectado{% else %}Conecta tu WhatsApp Business{% endif %}</h3><p>{% if whatsapp %}{{ whatsapp.verified_name or 'Tu negocio' }} · {{ whatsapp.display_phone_number or 'Número conectado' }}{% else %}Disponible cuando tu servicio CRM + Chatbot esté activo. Desde aquí podrás iniciar el proceso oficial de Meta Embedded Signup.{% endif %}</p></div>{% if subscription %}<a class="btn {% if whatsapp %}btn--ghost{% else %}btn--primary{% endif %}" href="{{ url_for('meta.whatsapp_page') }}">{% if whatsapp %}Administrar{% else %}Conectar WhatsApp{% endif %}</a>{% else %}<span class="locked">🔒 Servicio requerido</span>{% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,56 +1,38 @@
-# NOXTIUM — Sitio web institucional
+# NOXTIUM CRM + Chatbot
 
-Landing page en **Flask** con navbar, sección "sobre nosotros", arquitectura
-de módulos y formulario de contacto que envía los mensajes a
-`santicris162@gmail.com`.
+Primera versión del portal comercial de NOXTIUM: registro de clientes, catálogo de servicios, suscripciones, bloqueo hasta pago, conexión de WhatsApp y base para automatizaciones con n8n.
 
-## Estructura
+## Flujo actual
 
-```
-noxtium_web/
-├── app.py                 # rutas y lógica del servidor
-├── requirements.txt
-├── templates/
-│   ├── base.html          # navbar + footer (se repite en todas las páginas)
-│   ├── index.html         # inicio: hero, sobre nosotros, módulos, contacto
-│   ├── login.html         # placeholder de inicio de sesión
-│   └── soporte.html       # página de soporte
-└── static/
-    ├── css/style.css      # todos los estilos (variables de marca al inicio)
-    ├── js/main.js         # menú móvil
-    └── img/                # logos e imágenes que agregues
-```
+1. El visitante crea una cuenta.
+2. Entra al dashboard sin servicios activos.
+3. Selecciona **CRM + Chatbot**.
+4. Se crea una suscripción `PENDING_PAYMENT`.
+5. El CRM y WhatsApp permanecen bloqueados.
+6. La página de pago queda preparada para conectar una pasarela real.
+7. Para pruebas locales existe **Confirmar pago de prueba**.
+8. Al pasar a `ACTIVE`, se habilita **Conectar WhatsApp Business**.
+9. Meta Embedded Signup guarda la conexión por empresa.
 
-## Cómo correrlo
+## Migración
 
-```bash
-python -m venv venv
-source venv/bin/activate      # En Windows: venv\Scripts\activate
-pip install -r requirements.txt
+Después de copiar el proyecto y configurar `.env`:
+
+```powershell
+alembic upgrade head
 python app.py
 ```
 
-Abre `http://127.0.0.1:5000`.
+La nueva migración es `0002_billing_portal`. No se usa `db.create_all()` como autoridad del esquema.
 
-## Conectar el envío real de correos
+## Prueba rápida
 
-El formulario de contacto ya está construido para enviar el mensaje a
-`santicris162@gmail.com` usando `smtplib` (ver `enviar_correo()` en
-`app.py`). Mientras no configures credenciales, el sitio sigue
-funcionando: el mensaje solo se imprime en la consola en vez de enviarse.
-
-Para activarlo de verdad, define estas variables de entorno antes de
-correr `python app.py` (usa una cuenta de Gmail con una "contraseña de
-aplicación", nunca tu contraseña normal):
-
-```bash
-export MAIL_USERNAME="tu_cuenta_envio@gmail.com"
-export MAIL_PASSWORD="tu_contraseña_de_aplicacion"
+```text
+http://127.0.0.1:5000/registro
 ```
 
-## Próximos pasos sugeridos para un junior
+Crea una cuenta, entra al dashboard y contrata CRM + Chatbot. Para esta etapa utiliza el botón de pago de prueba. Después reemplazaremos ese botón por una pasarela real (por ejemplo Wompi/PayU/Stripe) y la activación dependerá del webhook de pago.
 
-- Reemplazar el isotipo SVG del navbar por el logo oficial en `static/img/`.
-- Conectar `login.html` a un sistema real de usuarios (por ejemplo con `Flask-Login`).
-- Guardar los mensajes del formulario en una base de datos, además de enviarlos por correo.
-- Agregar imágenes reales del "Caso piloto: piqueteadero" en la sección de módulos.
+## Seguridad
+
+Los tokens de WhatsApp siguen almacenándose cifrados. Las credenciales por cliente no deben colocarse en `.env`; allí solo van las credenciales globales de la aplicación Meta y n8n.

@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Error · NOXTIUM{% endblock %}
+{% block content %}
+<section class="simple-page"><div class="simple-page__card"><h1>Algo salió mal</h1><p>Ocurrió un error interno. Revisa la consola de Flask para ver el detalle.</p><a class="btn btn--primary btn--lg" href="{{ url_for('inicio') }}">Volver al inicio</a></div></section>
+{% endblock %}

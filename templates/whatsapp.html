@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Conectar WhatsApp · NOXTIUM{% endblock %}
+
+{% block content %}
+<section class="simple-page">
+    <div class="simple-page__card">
+        <h1>Conecta tu WhatsApp Business</h1>
+
+        <p>
+            Conecta tu cuenta mediante el flujo oficial de Meta.
+            Noxtium almacenará la conexión de forma segura para
+            recibir eventos y ejecutar automatizaciones con n8n.
+        </p>
+
+        <button
+            id="connect-whatsapp"
+            class="btn btn--primary btn--lg"
+            type="button"
+        >
+            Conectar WhatsApp Business
+        </button>
+
+        <p id="whatsapp-status" aria-live="polite"></p>
+    </div>
+</section>
+
+<script>
+    window.NOXTIUM_META_APP_ID = {{ meta_app_id|tojson }};
+    window.NOXTIUM_META_VERSION = {{ meta_version|tojson }};
+    window.NOXTIUM_META_CONFIG_ID = {{ config_id|tojson }};
+</script>
+
+<script
+    async
+    defer
+    crossorigin="anonymous"
+    src="https://connect.facebook.net/en_US/sdk.js">
+</script>
+
+<script src="{{ url_for('static', filename='js/whatsapp.js') }}"></script>
+{% endblock %}

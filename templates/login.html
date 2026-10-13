@@ -1,31 +1,14 @@
 {% extends "base.html" %}
-
 {% block title %}Iniciar sesión · NOXTIUM{% endblock %}
-
 {% block content %}
-  <section class="simple-page">
-    <div class="simple-page__card">
-      <h1>Iniciar sesión</h1>
-      <p>
-        El acceso a la plataforma NOXTIUM está en construcción.
-        Muy pronto podrás iniciar sesión desde aquí para administrar
-        los módulos de tu negocio.
-      </p>
-
-      <!-- Formulario visual, aún no conectado a un sistema de usuarios real.
-           Aquí es donde un desarrollador junior conectaría más adelante
-           la autenticación (por ejemplo con Flask-Login). -->
-      <form class="simple-page__form">
-        <label for="login-correo">Correo</label>
-        <input type="email" id="login-correo" placeholder="tucorreo@ejemplo.com" disabled>
-
-        <label for="login-clave">Contraseña</label>
-        <input type="password" id="login-clave" placeholder="••••••••" disabled>
-
-        <button type="button" class="btn btn--primary btn--lg" disabled>Próximamente</button>
-      </form>
-
-      <a class="simple-page__back" href="{{ url_for('inicio') }}">← Volver al inicio</a>
-    </div>
-  </section>
+<section class="auth-page"><div class="auth-card">
+  <div class="eyebrow">NOXTIUM / CUENTA</div><h1>Entra a tu plataforma</h1>
+  <p>Accede a tus servicios, pagos y configuración de WhatsApp.</p>
+  <form class="auth-form" method="POST" action="{{ url_for('portal.login_post') }}">
+    <label for="correo">Correo</label><input type="email" id="correo" name="correo" placeholder="tucorreo@empresa.com" required>
+    <label for="password">Contraseña</label><input type="password" id="password" name="password" placeholder="Mínimo 8 caracteres" required>
+    <button class="btn btn--primary btn--lg" type="submit">Iniciar sesión</button>
+  </form>
+  <p class="auth-foot">¿Todavía no tienes cuenta? <a href="{{ url_for('portal.register') }}">Crear cuenta</a></p>
+</div></section>
 {% endblock %}

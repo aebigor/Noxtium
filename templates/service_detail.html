@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ service.name }} · NOXTIUM{% endblock %}
+{% block content %}
+<section class="service-detail"><div class="detail-hero"><div class="service-icon service-icon--large">{{ service.icon }}</div><div><div class="eyebrow">SERVICIO NOXTIUM</div><h1>{{ service.name }}</h1><p>{{ service.description }}</p></div></div>
+<div class="detail-grid"><div class="detail-copy"><h2>Todo lo que necesitas para automatizar la atención</h2><p>Conecta tu operación con WhatsApp y construye automatizaciones que trabajen por tu negocio. El acceso se habilita después de confirmar el pago.</p><div class="feature-list">{% for item in plans[0].features %}<div><span>✓</span>{{ item }}</div>{% endfor %}</div></div>
+<div class="plan-box"><span class="service-badge">PLAN {{ plans[0].name|upper }}</span><h2>${{ "{:,.0f}".format(plans[0].price).replace(',', '.') }}</h2><p>COP / mes</p><form method="POST" action="{{ url_for('portal.contract_service', slug=service.slug) }}"><input type="hidden" name="plan_id" value="{{ plans[0].id }}"><button class="btn btn--primary btn--lg full" type="submit">Contratar servicio</button></form><small>Al contratar se generará el pago. El CRM permanecerá bloqueado hasta confirmación.</small></div></div></section>
+{% endblock %}
