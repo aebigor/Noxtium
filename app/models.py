@@ -33,6 +33,7 @@ class User(db.Model):
     full_name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(255), nullable=False, unique=True, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="client", index=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
 
@@ -93,6 +94,7 @@ class Payment(db.Model):
     status = db.Column(db.String(30), nullable=False, default="PENDING", index=True)
     provider = db.Column(db.String(50), nullable=False, default="manual")
     transaction_id = db.Column(db.String(150), index=True)
+    receipt_filename = db.Column(db.String(255))
     paid_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
 
@@ -133,3 +135,24 @@ class WhatsAppMessage(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
 
     connection = db.relationship("WhatsAppConnection", back_populates="messages")
+
+
+class ConsultationRequest(db.Model):
+    __tablename__ = "consultation_requests"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    contact_method = db.Column(db.String(20), nullable=False)  # whatsapp | email
+    contact_value = db.Column(db.String(255), nullable=False)
+    preferred_date = db.Column(db.String(40))
+    preferred_time = db.Column(db.String(40))
+    modules = db.Column(db.JSON, nullable=False, default=list)
+    business_description = db.Column(db.Text)
+    status = db.Column(db.String(30), nullable=False, default="PENDING", index=True)
+    admin_notes = db.Column(db.Text)
+    meeting_url = db.Column(db.String(1000))
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+
+    company = db.relationship("Company")
+    user = db.relationship("User")

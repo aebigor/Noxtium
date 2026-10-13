@@ -128,6 +128,22 @@ class Config:
     )
 
     # --------------------------------------------------------
+    # Administración y comprobantes
+    # --------------------------------------------------------
+    ADMIN_EMAILS = [
+        email.strip().lower()
+        for email in os.getenv("ADMIN_EMAILS", "noxtium@noxtium.com").split(",")
+        if email.strip()
+    ]
+    MAX_CONTENT_LENGTH = 8 * 1024 * 1024
+    RECEIPTS_UPLOAD_FOLDER = str(BASE_DIR / "static" / "uploads" / "receipts")
+    NEQUI_PHONE = os.getenv("NEQUI_PHONE", "")
+    NEQUI_ACCOUNT_NAME = os.getenv("NEQUI_ACCOUNT_NAME", "NOXTIUM")
+    NEQUI_QR_URL = os.getenv("NEQUI_QR_URL", "/static/uploads/nequi-qr.png")
+    CONSULTATION_WHATSAPP = os.getenv("CONSULTATION_WHATSAPP", "")
+    N8N_CONSULTATION_WEBHOOK_URL = os.getenv("N8N_CONSULTATION_WEBHOOK_URL", "")
+
+    # --------------------------------------------------------
     # Desarrollo
     # --------------------------------------------------------
 

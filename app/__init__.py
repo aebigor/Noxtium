@@ -26,11 +26,16 @@ def create_app():
         user = current_user()
         return {
             "current_account_user": user,
-            "current_subscription": active_subscription(user.company_id) if user else None,
+            "current_subscription": active_subscription(user.company_id) if user and user.role != "admin" else None,
+            "current_is_admin": bool(user and user.role == "admin"),
         }
 
     @app.get("/")
     def inicio():
+        from app.routes.portal import current_user
+        user = current_user()
+        if user and user.role == "admin":
+            return redirect(url_for("portal.admin_dashboard"))
         return render_template("index.html")
 
     @app.get("/login")
@@ -38,6 +43,10 @@ def create_app():
         if session.get("user_id"):
             return redirect(url_for("portal.dashboard"))
         return render_template("login.html")
+
+    @app.get("/403")
+    def forbidden_page():
+        return render_template("403.html"), 403
 
     @app.get("/soporte")
     def soporte():

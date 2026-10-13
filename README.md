@@ -36,3 +36,14 @@ Crea una cuenta, entra al dashboard y contrata CRM + Chatbot. Para esta etapa ut
 ## Seguridad
 
 Los tokens de WhatsApp siguen almacenándose cifrados. Las credenciales por cliente no deben colocarse en `.env`; allí solo van las credenciales globales de la aplicación Meta y n8n.
+
+
+## Roles, revisión manual y preconsultas
+
+- El usuario `noxtium@noxtium.com` debe tener `role=admin`; créalo con `python scripts/create_admin.py`. El seed solicita la contraseña en consola.
+- El administrador entra a `/admin/dashboard`, donde solo ve comprobantes enviados y preconsultas. No ve catálogo ni puede conectar WhatsApp como cliente.
+- Los clientes pueden ver el catálogo. Para CRM + Chatbot deben subir un comprobante válido; la activación ocurre solo al aprobarlo desde el panel.
+- La integración de módulos no cobra ni activa un servicio: crea una preconsulta gratuita para coordinar reunión por WhatsApp o correo.
+- Después de copiar el proyecto: `alembic upgrade head`. La migración `0003_roles_receipts_consultations` agrega roles, comprobantes y solicitudes.
+- Configura `ADMIN_EMAILS`, `NEQUI_PHONE`, `NEQUI_ACCOUNT_NAME` y `NEQUI_QR_URL` en tu `.env`. Coloca el QR en `static/uploads/nequi-qr.png` si usas la ruta predeterminada.
+- El archivo `.env` real nunca debe compartirse ni incluirse en ZIP.

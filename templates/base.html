@@ -18,9 +18,13 @@
     </a>
     <nav class="navbar__links" id="navLinks">
       {% if current_account_user %}
-        <a href="{{ url_for('portal.dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('portal.service_detail', slug='crm-chatbot') }}">CRM + Chatbot</a>
-        <a href="{{ url_for('soporte') }}">Soporte</a>
+        {% if current_is_admin %}
+          <a href="{{ url_for('portal.admin_dashboard') }}">Solicitudes de clientes</a>
+        {% else %}
+          <a href="{{ url_for('portal.dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('portal.service_detail', slug='crm-chatbot') }}">CRM + Chatbot</a>
+          <a href="{{ url_for('soporte') }}">Soporte</a>
+        {% endif %}
       {% else %}
         <a href="{{ url_for('inicio') }}#inicio">Inicio</a>
         <a href="{{ url_for('inicio') }}#nosotros">Sobre nosotros</a>
@@ -29,7 +33,7 @@
     </nav>
     <div class="navbar__actions">
       {% if current_account_user %}
-        <span class="account-pill"><span class="status-dot"></span>{{ current_account_user.full_name }}</span>
+        <span class="account-pill"><span class="status-dot"></span>{{ current_account_user.full_name }}{% if current_is_admin %} · ADMIN{% endif %}</span>
         <a href="{{ url_for('portal.logout') }}" class="btn btn--ghost">Cerrar sesión</a>
       {% else %}
         <a href="{{ url_for('login') }}" class="btn btn--ghost">Iniciar sesión</a>
@@ -48,7 +52,7 @@
 <footer class="footer">
   <div class="footer__inner">
     <div class="footer__brand"><span class="footer__logo">NOXTIUM</span><p>De lo que necesitas a lo que imaginas: tecnología que crece contigo.</p></div>
-    <div class="footer__col"><h4>Plataforma</h4><a href="{{ url_for('portal.service_detail', slug='crm-chatbot') }}">CRM + Chatbot</a><a href="{{ url_for('soporte') }}">Soporte</a></div>
+    {% if not current_is_admin %}<div class="footer__col"><h4>Plataforma</h4><a href="{{ url_for('portal.service_detail', slug='crm-chatbot') }}">CRM + Chatbot</a><a href="{{ url_for('soporte') }}">Soporte</a></div>{% endif %}
     <div class="footer__col"><h4>Cuenta</h4>{% if current_account_user %}<a href="{{ url_for('portal.dashboard') }}">Dashboard</a><a href="{{ url_for('portal.logout') }}">Cerrar sesión</a>{% else %}<a href="{{ url_for('login') }}">Iniciar sesión</a><a href="{{ url_for('portal.register') }}">Crear cuenta</a>{% endif %}</div>
     <div class="footer__col"><h4>Contacto</h4><a href="mailto:santicris162@gmail.com">santicris162@gmail.com</a><span>Bogotá, Colombia</span></div>
   </div>

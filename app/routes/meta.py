@@ -21,6 +21,8 @@ def whatsapp_page():
     if not user_id:
         return render_template("login.html"), 401
     user = db.session.get(User, user_id)
+    if not user or user.role == "admin":
+        return render_template("403.html"), 403
     active = (Subscription.query.join(ServicePlan).join(Service).filter(Subscription.company_id == user.company_id, Subscription.status == "ACTIVE", Service.slug == "crm-chatbot").first() if user else None)
     if not active:
         return render_template("service_locked.html"), 403
@@ -50,10 +52,11 @@ def embedded_signup():
 
     # DEMO: permite usar NOXTIUM_DEMO_COMPANY_ID.
     # En producción reemplazar por el company_id del usuario autenticado.
-    company_id = session.get("company_id")
-    if not company_id:
-        company_id = current_app.config.get("DEMO_COMPANY_ID")
-
+    user_id = session.get("user_id")
+    user = db.session.get(User, user_id) if user_id else None
+    if not user or user.role == "admin":
+        return jsonify({"error": "Solo las cuentas de cliente pueden conectar WhatsApp."}), 403
+    company_id = user.company_id
     if not company_id:
         return jsonify({
             "error": (
@@ -153,6 +156,8 @@ def embedded_signup():
 
 @meta_bp.post("/demo/company")
 def create_demo_company():
+    if not current_app.config.get("DEVELOPMENT_PAYMENT_DEMO", False):
+        return jsonify({"error": "Ruta de demostración deshabilitada."}), 403
     data = request.get_json(silent=True) or {}
 
     name = data.get("name", "Empresa Demo")
