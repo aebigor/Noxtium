@@ -47,3 +47,7 @@ Los tokens de WhatsApp siguen almacenándose cifrados. Las credenciales por clie
 - Después de copiar el proyecto: `alembic upgrade head`. La migración `0003_roles_receipts_consultations` agrega roles, comprobantes y solicitudes.
 - Configura `ADMIN_EMAILS`, `NEQUI_PHONE`, `NEQUI_ACCOUNT_NAME` y `NEQUI_QR_URL` en tu `.env`. Coloca el QR en `static/uploads/nequi-qr.png` si usas la ruta predeterminada.
 - El archivo `.env` real nunca debe compartirse ni incluirse en ZIP.
+
+## Agente de ventas y CRM por restaurante
+
+Consulta `README_IMPLEMENTACION_AGENTE.md` para instalar las nuevas migraciones, configurar los webhooks de n8n y completar la integración de WhatsApp. La interfaz del cliente incluye un asistente guiado de configuración, menú, estados del agente y contactos CRM con notas, etiquetas y estado comercial.

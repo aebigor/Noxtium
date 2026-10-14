@@ -180,7 +180,16 @@ def contract_service(slug):
     service = Service.query.filter_by(slug=slug, active=True).first_or_404()
     if service.slug == "integracion-modulos":
         return redirect(url_for("portal.request_consultation"))
-    plan = ServicePlan.query.filter_by(id=request.form.get("plan_id"), service_id=service.id, active=True).first()
+    plan_id_raw = (request.form.get("plan_id") or "").strip()
+    try:
+        plan_id = int(plan_id_raw)
+    except (TypeError, ValueError):
+        plan_id = None
+    plan = (
+        ServicePlan.query.filter_by(id=plan_id, service_id=service.id, active=True).first()
+        if plan_id is not None
+        else None
+    )
     if not plan:
         flash("El plan seleccionado no es válido.", "error"); return redirect(url_for("portal.service_detail", slug=slug))
     existing = active_subscription(user.company_id)

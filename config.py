@@ -117,6 +117,7 @@ class Config:
         "N8N_WEBHOOK_SECRET",
         "",
     )
+    N8N_PROVISION_WEBHOOK_URL = os.getenv("N8N_PROVISION_WEBHOOK_URL", "").strip()
 
     # --------------------------------------------------------
     # Cifrado
