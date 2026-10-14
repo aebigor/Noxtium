@@ -51,3 +51,12 @@ Los tokens de WhatsApp siguen almacenándose cifrados. Las credenciales por clie
 ## Agente de ventas y CRM por restaurante
 
 Consulta `README_IMPLEMENTACION_AGENTE.md` para instalar las nuevas migraciones, configurar los webhooks de n8n y completar la integración de WhatsApp. La interfaz del cliente incluye un asistente guiado de configuración, menú, estados del agente y contactos CRM con notas, etiquetas y estado comercial.
+
+
+## Conexión WhatsApp por QR (modo no oficial)
+
+Para esta edición, la pantalla de conexión usa Baileys en un servicio Node.js local, no el flujo Embedded Signup de Meta. Configura las variables QR en `.env` y sigue `README_QR_N8N.md`. La biblioteca no es oficial y puede desconectarse o estar sujeta a restricciones; prueba primero con un número autorizado.
+
+## Planes y administración de empresas
+
+La administración incluye `Empresas`, con vencimientos y cancelación. Los planes iniciales son mensual (30 días), trimestral (90 días) y anual (365 días). Los comprobantes siguen siendo revisados manualmente.

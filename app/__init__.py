@@ -4,6 +4,7 @@ from .database import db
 from .routes.meta import meta_bp
 from .routes.webhooks import webhook_bp
 from .routes.portal import portal_bp
+from .routes.qr_whatsapp import qr_whatsapp_bp
 
 
 def create_app():
@@ -19,6 +20,7 @@ def create_app():
     app.register_blueprint(meta_bp)
     app.register_blueprint(webhook_bp)
     app.register_blueprint(portal_bp)
+    app.register_blueprint(qr_whatsapp_bp)
 
     @app.context_processor
     def inject_account_state():

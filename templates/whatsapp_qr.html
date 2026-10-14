@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Conectar WhatsApp por QR · NOXTIUM{% endblock %}
+{% block content %}
+<section class="simple-page"><div class="simple-page__card" style="max-width:760px">
+  <div class="eyebrow">NOXTIUM · CONEXIÓN QR</div><h1>Conecta tu WhatsApp</h1>
+  <p>Abre WhatsApp en el teléfono del restaurante, entra en <strong>Dispositivos vinculados → Vincular un dispositivo</strong> y escanea el QR que aparece aquí.</p>
+  <div class="notice-card notice-card--warning"><div class="notice-icon">!</div><div><strong>Importante</strong><p>Esta conexión usa una biblioteca no oficial, no la API oficial de Meta. Puede desconectarse o estar sujeta a restricciones de WhatsApp. Usa primero un número autorizado para pruebas.</p></div></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin:18px 0"><button id="qr-start" class="btn btn--primary" type="button">Generar código QR</button><button id="qr-disconnect" class="btn btn--ghost" type="button">Desconectar</button></div>
+  <div id="qr-status" role="status" aria-live="polite">{% if connection and connection.status == 'connected' %}WhatsApp conectado{% else %}Todavía no hay una sesión conectada{% endif %}</div>
+  <div style="text-align:center;padding:16px"><img id="qr-image" alt="Código QR temporal para vincular WhatsApp" style="display:none;width:280px;max-width:100%;margin:auto" /></div>
+  <div id="qr-connected" style="display:none"><strong>Conectado:</strong> <span id="qr-phone"></span></div>
+  {% if test_mode %}<hr><h2>Enviar mensaje de prueba</h2><p>Solo envía mensajes al número de prueba que tengas autorizado en la configuración.</p><label for="test-to">Número destino, con indicativo de país y sin +</label><input id="test-to" placeholder="573001234567"><label for="test-text">Mensaje</label><textarea id="test-text" rows="3">Prueba de NOXTIUM: conexión QR funcionando.</textarea><button id="qr-send-test" class="btn btn--primary" type="button">Enviar prueba</button>{% endif %}
+  <p style="margin-top:18px"><a href="{{ url_for('portal.agent_setup') }}">Configurar menú y agente</a> · <a href="{{ url_for('portal.dashboard') }}">Volver al panel</a></p>
+</div></section>
+<script>
+(() => {
+ const statusEl=document.getElementById('qr-status'), qr=document.getElementById('qr-image'), connected=document.getElementById('qr-connected'), phone=document.getElementById('qr-phone');
+ const manageMode = new URLSearchParams(window.location.search).get('manage') === '1';
+ let poll=null, redirected=false;
+ async function api(url, method='GET', body=null){const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});const d=await r.json().catch(()=>({error:'Respuesta no válida'}));if(!r.ok)throw new Error(d.error||'Error de conexión');return d;}
+ function status(t, bad=false){statusEl.textContent=t;statusEl.style.color=bad?'#b42318':'';}
+ async function refresh(){try{const d=await api('/api/qr-whatsapp/status');if(d.qr_data_url){qr.src=d.qr_data_url;qr.style.display='block';}if(d.status==='connected'){qr.style.display='none';connected.style.display='block';phone.textContent=d.phone_number||'WhatsApp vinculado';status('WhatsApp conectado. Te llevaremos a configurar el agente…');if(poll){clearInterval(poll);poll=null;}if(!manageMode&&!redirected){redirected=true;setTimeout(()=>{window.location.href='{{ url_for('portal.agent_setup') }}?connected=1';},900);}}else if(d.status==='connecting'){status(d.qr_data_url?'Escanea el QR desde WhatsApp.':'Preparando código QR…');}else if(d.status==='logged_out'){status('La sesión fue cerrada desde WhatsApp. Genera un nuevo QR.',true);qr.style.display='none';}else if(d.status==='error'){status(d.last_error||'No se pudo conectar.',true);}else{status('Esperando conexión. Pulsa “Generar código QR” para comenzar.');}}catch(e){status(e.message,true);}}
+ document.getElementById('qr-start').addEventListener('click',async()=>{try{status('Preparando sesión…');qr.style.display='none';await api('/api/qr-whatsapp/start','POST',{});await refresh();if(!poll)poll=setInterval(refresh,2500);}catch(e){status(e.message,true);}});
+ document.getElementById('qr-disconnect').addEventListener('click',async()=>{try{await api('/api/qr-whatsapp/disconnect','POST',{});if(poll){clearInterval(poll);poll=null;}qr.style.display='none';connected.style.display='none';status('Sesión desconectada.');}catch(e){status(e.message,true);}});
+ document.getElementById('qr-send-test')?.addEventListener('click',async()=>{try{const to=document.getElementById('test-to').value;const text=document.getElementById('test-text').value;await api('/api/qr-whatsapp/test-message','POST',{to,text});status('Mensaje de prueba enviado. Revisa el teléfono de destino.');}catch(e){status(e.message,true);}});
+ refresh();
+ poll=setInterval(refresh,2500);
+})();
+</script>
+{% endblock %}

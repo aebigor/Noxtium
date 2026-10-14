@@ -19,10 +19,15 @@
     <nav class="navbar__links" id="navLinks">
       {% if current_account_user %}
         {% if current_is_admin %}
-          <a href="{{ url_for('portal.admin_dashboard') }}">Solicitudes de clientes</a>
+          <a href="{{ url_for('portal.admin_dashboard') }}">Pagos y solicitudes</a>
+          <a href="{{ url_for('portal.admin_companies') }}">Empresas</a>
         {% else %}
-          <a href="{{ url_for('portal.dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('portal.service_detail', slug='crm-chatbot') }}">CRM + Chatbot</a>
+          <a href="{{ url_for('portal.dashboard') }}">Mi empresa</a>
+          {% if current_subscription %}
+          <a href="{{ url_for('qr_whatsapp.qr_whatsapp_page') }}">WhatsApp QR</a>
+          <a href="{{ url_for('portal.agent_setup') }}">Configurar agente</a>
+          <a href="{{ url_for('portal.crm_contacts') }}">CRM</a>
+          {% endif %}
           <a href="{{ url_for('soporte') }}">Soporte</a>
         {% endif %}
       {% else %}

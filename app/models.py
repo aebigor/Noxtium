@@ -156,3 +156,73 @@ class ConsultationRequest(db.Model):
 
     company = db.relationship("Company")
     user = db.relationship("User")
+
+
+class AgentConfiguration(db.Model):
+    __tablename__ = "agent_configurations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    restaurant_name = db.Column(db.String(150), nullable=False)
+    business_type = db.Column(db.String(80), nullable=False, default="Restaurante")
+    address = db.Column(db.String(255))
+    opening_hours = db.Column(db.Text)
+    delivery_zones = db.Column(db.Text)
+    menu_items = db.Column(db.JSON, nullable=False, default=list)
+    sales_tone = db.Column(db.String(40), nullable=False, default="amable")
+    special_rules = db.Column(db.Text)
+    welcome_message = db.Column(db.String(500))
+    status = db.Column(db.String(30), nullable=False, default="SETUP", index=True)
+    n8n_workflow_id = db.Column(db.String(120))
+    last_tested_at = db.Column(db.DateTime(timezone=True))
+    last_error = db.Column(db.Text)
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class CRMContact(db.Model):
+    __tablename__ = "crm_contacts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    phone = db.Column(db.String(50), nullable=False)
+    contact_name = db.Column(db.String(150))
+    status = db.Column(db.String(20), nullable=False, default="NEW", index=True)
+    tags = db.Column(db.JSON, nullable=False, default=list)
+    notes = db.Column(db.Text)
+    last_message_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+    __table_args__ = (db.UniqueConstraint("company_id", "phone", name="uq_crm_contacts_company_phone"),)
+
+
+class QRWhatsAppConnection(db.Model):
+    __tablename__ = "qr_whatsapp_connections"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    phone_number = db.Column(db.String(50))
+    verified_name = db.Column(db.String(255))
+    status = db.Column(db.String(30), nullable=False, default="disconnected", index=True)
+    last_error = db.Column(db.Text)
+    linked_at = db.Column(db.DateTime(timezone=True))
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+    @property
+    def display_phone_number(self):
+        return self.phone_number
+
+
+class QRWhatsAppMessage(db.Model):
+    __tablename__ = "qr_whatsapp_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
+    connection_id = db.Column(db.Integer, db.ForeignKey("qr_whatsapp_connections.id", ondelete="CASCADE"), nullable=False, index=True)
+    message_id = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    from_number = db.Column(db.String(50))
+    to_number = db.Column(db.String(50))
+    message_text = db.Column(db.Text)
+    direction = db.Column(db.String(12), nullable=False, default="IN")
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)

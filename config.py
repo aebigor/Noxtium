@@ -119,6 +119,12 @@ class Config:
     )
     N8N_PROVISION_WEBHOOK_URL = os.getenv("N8N_PROVISION_WEBHOOK_URL", "").strip()
 
+    # Servicio independiente de WhatsApp Web/QR (Node.js + Baileys)
+    QR_WHATSAPP_SERVICE_URL = os.getenv("QR_WHATSAPP_SERVICE_URL", "http://127.0.0.1:3010").rstrip("/")
+    QR_WHATSAPP_API_SECRET = os.getenv("QR_WHATSAPP_API_SECRET", "")
+    QR_WHATSAPP_TEST_RECIPIENTS = [n.strip() for n in os.getenv("QR_WHATSAPP_TEST_RECIPIENTS", "").split(",") if n.strip()]
+    QR_WHATSAPP_TEST_MODE = os.getenv("QR_WHATSAPP_TEST_MODE", "true").strip().lower() == "true"
+
     # --------------------------------------------------------
     # Cifrado
     # --------------------------------------------------------

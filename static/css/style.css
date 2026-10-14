@@ -529,3 +529,33 @@ textarea:focus-visible {
 .payment-card{max-width:700px;margin:auto;padding:36px;border:1px solid rgba(0,194,255,.25);background:linear-gradient(145deg,#10141c,#0a0c11);border-radius:18px}.payment-card>h1{font-size:2.2rem}.payment-summary{display:flex;justify-content:space-between;align-items:center;padding:18px;border:1px solid var(--color-border);border-radius:12px;margin:24px 0;font-size:.9rem}.payment-summary strong{font-family:var(--font-heading);font-size:1.5rem}.payment-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:24px 0}.payment-steps>div{font-size:.65rem;color:var(--color-text-muted);padding:10px;border:1px solid var(--color-border);border-radius:8px}.payment-steps span{display:block;margin-bottom:5px;color:var(--color-text)}.payment-steps .done{border-color:rgba(0,208,132,.35)}.payment-steps .done span{color:#00d084}.payment-steps .current{border-color:rgba(0,194,255,.4);color:var(--color-accent)}.payment-provider,.dev-payment{padding:20px;border-radius:12px;border:1px solid var(--color-border);margin-top:16px}.payment-provider h3{margin-bottom:7px}.payment-provider p,.dev-payment p{font-size:.75rem}.dev-payment{border-style:dashed}.dev-payment strong{font-size:.75rem;color:#ffb020}
 @media(max-width:900px){.service-grid{grid-template-columns:1fr 1fr}.detail-grid{grid-template-columns:1fr}.hero-service-card{align-items:flex-start;flex-direction:column}.service-card-actions{text-align:left}.public-service__card{flex-direction:column;align-items:flex-start}.payment-steps{grid-template-columns:1fr 1fr}}
 @media(max-width:680px){.dashboard-head{align-items:flex-start;flex-direction:column}.service-grid{grid-template-columns:1fr}.notice-card,.whatsapp-module{align-items:flex-start;flex-wrap:wrap}.notice-card .btn,.whatsapp-module .btn{width:100%}.detail-hero{align-items:flex-start;flex-direction:column}.payment-card{padding:24px}.navbar__links,.navbar__actions{display:none}.navbar__toggle{display:flex}.account-pill{display:none}}
+
+
+/* ================= AGENTE: ASISTENTE GUIADO ================= */
+.agent-wizard-intro { margin: 22px 0 18px; }
+.agent-progress { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:0 0 18px; }
+.agent-progress__step { display:flex; align-items:center; gap:12px; min-width:0; padding:14px 16px; border:1px solid var(--color-border); border-radius:14px; background:var(--color-bg-elevated); opacity:.72; transition:border-color .2s, opacity .2s, background .2s; }
+.agent-progress__step > span { display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border:1px solid var(--color-border); border-radius:50%; color:var(--color-text-muted); font-weight:700; }
+.agent-progress__step strong,.agent-progress__step small { display:block; }
+.agent-progress__step strong { color:var(--color-text); font-size:.9rem; }
+.agent-progress__step small { color:var(--color-text-muted); font-size:.78rem; }
+.agent-progress__step.is-current { opacity:1; border-color:var(--color-accent); background:rgba(0,194,255,.08); }
+.agent-progress__step.is-current > span,.agent-progress__step.is-done > span { border-color:var(--color-accent); background:var(--color-accent); color:#041016; }
+.agent-progress__step.is-done { opacity:1; }
+.agent-wizard-hint { padding:14px 16px; border-left:3px solid var(--color-accent); border-radius:0 10px 10px 0; background:var(--color-bg-elevated); font-size:.92rem; }
+.agent-wizard-panel[hidden] { display:none !important; }
+.agent-wizard-panel { animation:agent-step-in .22s ease-out; }
+.agent-wizard-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap; }
+.agent-wizard-step-label { margin-right:auto; color:var(--color-text-muted); font-size:.88rem; }
+.agent-form .agent-panel { scroll-margin-top:100px; }
+.agent-form input:focus,.agent-form select:focus,.agent-form textarea:focus { outline:2px solid rgba(0,194,255,.25); outline-offset:1px; border-color:var(--color-accent); }
+.agent-connect-panel,.agent-launch { margin-top:22px; }
+.agent-launch { border:1px solid rgba(0,194,255,.4); background:linear-gradient(135deg,rgba(0,194,255,.09),rgba(18,18,22,.95)); border-radius:16px; padding:24px; }
+.agent-launch h2 { margin-top:10px; }
+@keyframes agent-step-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+@media(max-width:700px) {
+ .agent-progress { grid-template-columns:1fr; gap:8px; }
+ .agent-progress__step { padding:10px 12px; }
+ .agent-wizard-actions .btn { flex:1 1 auto; }
+ .agent-wizard-step-label { flex-basis:100%; }
+}
