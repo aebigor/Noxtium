@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Soporte · NOXTIUM{% endblock %}
+
+{% block content %}
+  <section class="simple-page">
+    <div class="simple-page__card">
+      <h1>Soporte</h1>
+      <p>
+        ¿Tienes una duda o un problema con alguno de los módulos de
+        NOXTIUM? Escríbenos y te ayudaremos lo antes posible.
+      </p>
+      <ul class="simple-page__list">
+        <li>Correo: <a href="mailto:santicris162@gmail.com">santicris162@gmail.com</a></li>
+        <li>Horario de atención: lunes a viernes, 8:00 a.m. – 6:00 p.m.</li>
+        <li>Tiempo de respuesta habitual: menos de 24 horas hábiles.</li>
+      </ul>
+      <a class="btn btn--primary btn--lg" href="{{ url_for('inicio') }}#contacto">Escribir un mensaje</a>
+      <a class="simple-page__back" href="{{ url_for('inicio') }}">← Volver al inicio</a>
+    </div>
+  </section>
+{% endblock %}

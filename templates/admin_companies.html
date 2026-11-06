@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Empresas · Administración NOXTIUM{% endblock %}
+{% block content %}
+<section class="dashboard-shell">
+  <div class="dashboard-head"><div><div class="eyebrow">PANEL INTERNO NOXTIUM</div><h1>Empresas y suscripciones</h1><p>Seguimiento de membresías, vencimientos y oportunidades de retención.</p></div><a class="btn btn--ghost" href="{{ url_for('portal.admin_dashboard') }}">Volver a pagos</a></div>
+  {% set active_count = rows|selectattr('active')|list|length %}
+  {% set expiring_count = rows|selectattr('expiring_soon')|list|length %}
+  <div class="service-grid" style="margin-bottom:1.5rem"><article class="service-card"><div class="eyebrow">EMPRESAS</div><h2>{{ rows|length }}</h2><p>Registradas en NOXTIUM</p></article><article class="service-card"><div class="eyebrow">SUSCRIPCIONES ACTIVAS</div><h2>{{ active_count }}</h2><p>Con acceso vigente</p></article><article class="service-card"><div class="eyebrow">RETENCIÓN</div><h2>{{ expiring_count }}</h2><p>Vencen en los próximos 7 días</p></article></div>
+  {% if rows %}<div class="service-grid">{% for row in rows %}<article class="service-card"><h3>{{ row.company.name }}</h3><p><strong>Correo:</strong> {{ row.company.email or (row.company.users[0].email if row.company.users else '—') }}</p><p><strong>Contacto:</strong> {{ row.company.users[0].full_name if row.company.users else 'Sin usuario' }}</p><p><strong>Registrada:</strong> {{ row.company.created_at.strftime('%d/%m/%Y') }}</p>
+    {% if row.active %}<span class="service-badge">ACTIVA</span><p><strong>Plan:</strong> {{ row.active.plan.name }}</p><p><strong>Valor:</strong> ${{ "{:,.0f}".format(row.active.plan.price).replace(',', '.') }} COP</p><p><strong>Vence:</strong> {{ row.active.expires_at.strftime('%d/%m/%Y') if row.active.expires_at else 'Sin vencimiento' }}</p>{% if row.expiring_soon %}<div class="notice-card notice-card--warning"><div><strong>Seguimiento de retención</strong><p>Contacta a esta empresa para ofrecer renovación o un plan más largo.</p></div></div>{% elif row.days_left is not none %}<p><strong>Días restantes:</strong> {{ row.days_left }}</p>{% endif %}
+    <form method="POST" action="{{ url_for('portal.cancel_company_subscription', company_id=row.company.id, subscription_id=row.active.id) }}" onsubmit="return confirm('¿Cancelar la suscripción de esta empresa? El agente se pausará.')"><button class="btn btn--ghost" type="submit">Cancelar suscripción</button></form>
+    {% elif row.latest and row.latest.status == 'PENDING_PAYMENT' %}<span class="account-state state-pending">PAGO PENDIENTE</span><p><strong>Plan solicitado:</strong> {{ row.latest.plan.name }}</p><p>Revisa el comprobante en pagos y solicitudes.</p>
+    {% elif row.latest %}<span class="account-state">{{ row.latest.status }}</span><p><strong>Último plan:</strong> {{ row.latest.plan.name }}</p>{% else %}<span class="account-state">SIN SUSCRIPCIÓN</span><p>Puede recibir una oferta de bienvenida.</p>{% endif %}
+    {% if row.last_payment %}<p><strong>Último pago:</strong> {{ row.last_payment.status }} · ${{ "{:,.0f}".format(row.last_payment.amount).replace(',', '.') }} COP</p>{% endif %}
+  </article>{% endfor %}</div>{% else %}<div class="notice-card"><div><strong>Todavía no hay empresas registradas.</strong></div></div>{% endif %}
+</section>
+{% endblock %}

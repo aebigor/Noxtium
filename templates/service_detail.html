@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ service.name }} · NOXTIUM{% endblock %}
+{% block content %}
+<section class="service-detail">
+  <div class="detail-hero">
+    <div class="service-icon service-icon--large">{{ service.icon }}</div>
+    <div><div class="eyebrow">SERVICIO NOXTIUM</div><h1>{{ service.name }}</h1><p>{{ service.description }}</p></div>
+  </div>
+
+  <div class="plan-discovery-banner">
+    <div class="plan-discovery-banner__icon" aria-hidden="true">↗</div>
+    <div class="plan-discovery-banner__copy">
+      <span class="eyebrow">{% if service_subscription %}SIGUE CRECIENDO CON NOXTIUM{% else %}SOLUCIONES PARA TU NEGOCIO{% endif %}</span>
+      <strong>{% if service_subscription %}¿Quieres ampliar lo que tu empresa puede hacer?{% else %}Encuentra el plan que se adapta a tu negocio{% endif %}</strong>
+      <p>Puedes conservar tu CRM y agregar Inventario, Software de restaurante o nuevos módulos cuando los necesites. Cada producto se gestiona por separado.</p>
+    </div>
+    <a class="btn btn--primary" href="{{ url_for('inicio') }}#herramientas">Ver servicios disponibles</a>
+  </div>
+
+  {% if service.slug == 'integracion-modulos' or (service.slug == 'inventario' and not plans) %}
+    <div class="detail-grid">
+      <div class="detail-copy">
+        <h2>{% if service.slug == 'inventario' %}Solicita tu acceso a Inventario{% else %}Tu idea puede convertirse en una herramienta real{% endif %}</h2>
+        <p>{% if service.slug == 'inventario' %}Estamos preparando el proceso de contratación para este producto. Déjanos tus datos y coordinaremos la activación y los siguientes pasos. El acceso se registra por separado por seguridad.{% else %}No queremos venderte solamente lo que ya existe. Cuéntanos qué proceso te hace perder tiempo, qué función necesitas o qué idea tienes. La revisamos contigo y evaluamos si puede convertirse en una solución para tu negocio.{% endif %}</p>
+        <div class="feature-list"><div>✓ Revisión de tus necesidades reales</div><div>✓ Recomendación de módulos y alcance</div><div>✓ Seguimiento desde NOXTIUM</div></div>
+      </div>
+      <div class="plan-box"><span class="service-badge">{% if service.slug == 'inventario' %}ACCESO ASISTIDO{% else %}PRIMERA CONVERSACIÓN{% endif %}</span><h2>{% if service.slug == 'inventario' %}Solicita acceso{% else %}Construyamos la idea{% endif %}</h2><p>{% if service.slug == 'inventario' %}El equipo revisará tu solicitud y te indicará el proceso de pago y activación.{% else %}Cuéntanos qué necesitas. Esta primera conversación no te obliga a contratar.{% endif %}</p><a class="btn btn--primary btn--lg full" href="{{ url_for('portal.request_consultation', producto=service.slug) }}">{% if service.slug == 'inventario' %}Solicitar acceso{% else %}Contar mi idea{% endif %}</a></div>
+    </div>
+
+  {% elif service.slug == 'imperio-del-barril' %}
+    <div class="detail-copy">
+      <h2>Elige el plan de operación y los módulos que necesita tu restaurante</h2>
+      <p>El acceso al software se contrata por periodo. Los módulos se activan por separado y puedes agregar otros después. El paquete de activación completo reúne los siete módulos por <strong>$1.500.000 COP</strong>.</p>
+      <div class="feature-list"><div>✓ Menú digital y catálogo de productos</div><div>✓ Meseros y comandas</div><div>✓ Cocina y estado de pedidos</div><div>✓ Caja, asistencia, inventario y reportes</div></div>
+      <p><strong>Operación del software:</strong> $150.000 al mes, $420.000 por 3 meses o $1.500.000 por 12 meses. La activación de módulos se paga aparte según los valores mostrados. NOXTIUM revisará el pago y coordinará el acceso.</p>
+    </div>
+    {% if service_subscription and service_subscription.plan.name == 'Paquete completo' %}
+      <div class="notice-card"><div class="notice-icon">✓</div><div><strong>Tu paquete completo ya está activo.</strong><p>Tu empresa ya tiene incluidos todos los módulos del software de restaurante.</p></div></div>
+    {% else %}
+      <div class="service-grid" style="margin-top:1.5rem">
+        {% for plan in plans %}
+          <article class="service-card {% if plan.name == 'Paquete completo' %}service-card--featured{% endif %}">
+            <span class="service-badge">{% if plan.name == 'Paquete completo' %}ACTIVACIÓN COMPLETA{% elif plan.billing_period == 'one_time' %}ACTIVACIÓN DE MÓDULO{% else %}PLAN DE OPERACIÓN{% endif %}</span>
+            <h3>{{ plan.name }}</h3>
+            <h2>${{ "{:,.0f}".format(plan.price).replace(',', '.') }} <small>COP</small></h2>
+            {% if plan.name == 'Paquete completo' %}<p>Todos los módulos incluidos; pago de activación único.</p>{% elif plan.billing_period == 'one_time' %}<p>Pago único para activar este módulo.</p>{% else %}<p>{% if plan.billing_period == 'monthly' %}Acceso durante 1 mes.{% elif plan.billing_period == 'quarterly' %}Acceso durante 3 meses.{% elif plan.billing_period == 'annual' %}Acceso durante 12 meses.{% endif %}</p>{% endif %}
+            <div class="feature-list">{% for item in plan.features %}<div>✓ {{ item }}</div>{% endfor %}</div>
+            {% if plan.id in active_plan_ids %}
+              <button class="btn btn--ghost full" type="button" disabled>{% if plan.billing_period == 'one_time' %}Módulo activo{% else %}Plan activo{% endif %}</button>
+            {% else %}
+              <form method="POST" action="{{ url_for('portal.contract_service', slug=service.slug) }}"><input type="hidden" name="plan_id" value="{{ plan.id }}"><button class="btn {% if plan.name == 'Paquete completo' %}btn--primary{% else %}btn--ghost{% endif %} full" type="submit">{% if plan.id in pending_plan_ids %}Continuar pago{% elif plan.name == 'Paquete completo' %}Contratar paquete completo{% elif plan.billing_period == 'one_time' %}Contratar módulo{% else %}Contratar plan{% endif %}</button></form>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div class="detail-copy"><h2>Elige la duración de tu plan</h2><p>Después de solicitarlo, envía el comprobante. El equipo de NOXTIUM revisará el pago y activará el servicio manualmente.</p><div class="feature-list">{% for item in plans[0].features %}{% if 'tokens de IA para el período contratado' not in item %}<div>✓ {{ item }}</div>{% endif %}{% endfor %}</div></div>
+    <div class="service-grid" style="margin-top:1.5rem">
+      {% for plan in plans %}
+        <article class="service-card service-card--featured">
+          <span class="service-badge">{{ plan.name }}</span>
+          <h2>${{ "{:,.0f}".format(plan.price).replace(',', '.') }} <small>COP</small></h2>
+          <p>{% if plan.billing_period == 'monthly' %}1 mes{% elif plan.billing_period == 'quarterly' %}3 meses{% elif plan.billing_period == 'annual' %}12 meses{% else %}{{ plan.billing_period }}{% endif %}</p>
+          {% if service.slug == 'crm-chatbot' %}
+            {% set token_feature = namespace(text='') %}
+            {% for feature in (plan.features or []) %}
+              {% if 'tokens de IA para el período contratado' in feature %}{% set token_feature.text = feature %}{% endif %}
+            {% endfor %}
+            {% if token_feature.text %}<p><strong>{{ token_feature.text }}</strong> para las automatizaciones con n8n durante este período.</p>{% else %}<p><strong>Incluye un cupo de tokens de IA</strong> para las automatizaciones con n8n, según el plan contratado.</p>{% endif %}
+          {% endif %}
+          <form method="POST" action="{{ url_for('portal.contract_service', slug=service.slug) }}"><input type="hidden" name="plan_id" value="{{ plan.id }}"><button class="btn btn--primary full" type="submit">{% if service_subscription %}Solicitar cambio de plan{% else %}Solicitar este plan{% endif %}</button></form>
+          <small>La activación se realiza cuando el administrador aprueba el comprobante.</small>
+        </article>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}NOXTIUM · Tecnología que crece contigo{% endblock %}</title>
+  <meta name="description" content="NOXTIUM: CRM, automatización y software modular para negocios.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="navbar">
+  <div class="navbar__inner">
+    <a href="{{ url_for('inicio') }}" class="navbar__brand" aria-label="NOXTIUM - Inicio">
+      <span class="brand-mark">N</span><span>NOXTIUM</span>
+    </a>
+    <nav class="navbar__links" id="navLinks">
+      {% if current_account_user %}
+        {% if current_is_admin %}
+          <a href="{{ url_for('portal.admin_dashboard') }}">Pagos y solicitudes</a>
+          <a href="{{ url_for('portal.admin_companies') }}">Empresas</a>
+        {% else %}
+          <a href="{{ url_for('portal.dashboard') }}">Mi empresa</a>
+          <a class="navbar__upgrade" href="{{ url_for('inicio') }}#herramientas">Actualizar plan / agregar servicios</a>
+          {% if current_subscription %}
+          <a href="{{ url_for('meta.whatsapp_page') }}">WhatsApp Business</a>
+          <a href="{{ url_for('portal.agent_setup') }}">Configurar agente</a>
+          <a href="{{ url_for('portal.crm_contacts') }}">CRM</a>
+          {% endif %}
+          <a class="navbar__support" href="{{ url_for('soporte') }}">Chat en vivo · Soporte</a>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('inicio') }}#inicio">Inicio</a>
+        <a href="{{ url_for('inicio') }}#herramientas">Herramientas</a>
+        <a href="{{ url_for('inicio') }}#idea">Tu idea</a>
+        <a href="{{ url_for('inicio') }}#contacto">Contacto</a>
+      {% endif %}
+    </nav>
+    <div class="navbar__actions">
+      {% if current_account_user %}
+        <span class="account-pill"><span class="status-dot"></span>{{ current_account_user.full_name }}{% if current_is_admin %} · ADMIN{% endif %}</span>
+        <a href="{{ url_for('portal.logout') }}" class="btn btn--ghost">Cerrar sesión</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn--ghost">Iniciar sesión</a>
+        <a href="{{ url_for('portal.register') }}" class="btn btn--primary">Crear cuenta</a>
+      {% endif %}
+    </div>
+    <button class="navbar__toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}<div class="flash-container">{% for category, message in messages %}<div class="flash flash--{{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__brand"><span class="footer__logo">NOXTIUM</span><p>De lo que necesitas a lo que imaginas: tecnología que crece contigo.</p></div>
+    {% if not current_is_admin %}<div class="footer__col"><h4>Plataforma</h4><a href="{{ url_for('portal.service_detail', slug='crm-chatbot') }}">CRM + Chatbot</a><a href="{{ url_for('soporte') }}">Soporte</a></div>{% endif %}
+    <div class="footer__col"><h4>Cuenta</h4>{% if current_account_user %}<a href="{{ url_for('portal.dashboard') }}">Dashboard</a><a href="{{ url_for('portal.logout') }}">Cerrar sesión</a>{% else %}<a href="{{ url_for('login') }}">Iniciar sesión</a><a href="{{ url_for('portal.register') }}">Crear cuenta</a>{% endif %}</div>
+    <div class="footer__col"><h4>Contacto</h4><a href="mailto:santicris162@gmail.com">santicris162@gmail.com</a><span>Bogotá, Colombia</span></div>
+  </div>
+  <div class="footer__bottom">© 2026 NOXTIUM. Todos los derechos reservados.</div>
+</footer>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

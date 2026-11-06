@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+instance/
+*.db
+.pytest_cache/
+.vscode/
+.idea/
+static/uploads/receipts/
+
+# Never commit production credentials
+.env
+wallet/
+*.json

@@ -1,0 +1,9 @@
+{
+  "name": "Tarjeta de lealtad",
+  "short_name": "Mi tarjeta",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6d5dfc",
+  "icons": [{"src": "/static/icons/loyalty.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}

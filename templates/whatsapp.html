@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Conectar WhatsApp Business · NOXTIUM{% endblock %}
+{% block content %}
+<section class="simple-page"><div class="simple-page__card" style="max-width:820px">
+  <div class="eyebrow">NOXTIUM · META WHATSAPP CLOUD API</div>
+  <h1>Conecta WhatsApp Business de forma oficial</h1>
+  <p>Vincula el número de tu empresa desde el registro oficial de Meta. NOXTIUM no te pedirá escanear un QR ni guardar sesiones de WhatsApp Web.</p>
+  <div class="agent-progress" style="margin:24px 0">
+    <div class="agent-progress__step is-current"><span>1</span><div><strong>Conectar Meta</strong><small>Autoriza tu cuenta y número</small></div></div>
+    <div class="agent-progress__step"><span>2</span><div><strong>Registrar catálogo</strong><small>Productos, precios y reglas</small></div></div>
+    <div class="agent-progress__step"><span>3</span><div><strong>Preparar n8n</strong><small>Validar automatización</small></div></div>
+  </div>
+  {% if connection %}
+    <div class="notice-card notice-card--accent"><div class="notice-icon">✓</div><div><strong>Ya hay un número conectado</strong><p>{{ connection.display_phone_number or connection.verified_name or 'WhatsApp Business' }} · conexión oficial de Meta.</p></div></div>
+    <a class="btn btn--ghost" href="{{ url_for('portal.agent_setup') }}">Continuar con catálogo y agente</a>
+  {% else %}
+    {% if not meta_configured %}
+      <div class="notice-card notice-card--warning"><div class="notice-icon">!</div><div><strong>La conexión todavía no está habilitada</strong><p>El administrador de NOXTIUM debe completar la configuración de la aplicación de Meta y el ID de Embedded Signup en el servidor. No necesitas compartir contraseñas ni tokens con soporte.</p></div></div>
+    {% endif %}
+    <ul class="simple-check-list"><li>Inicia sesión con la cuenta de Facebook que administra el negocio.</li><li>Selecciona o crea la cuenta de WhatsApp Business y registra el número.</li><li>Acepta únicamente los permisos que correspondan a tu empresa.</li><li>Al terminar, volverás a NOXTIUM para completar tu catálogo y agente.</li></ul>
+    <button id="connect-whatsapp" class="btn btn--primary btn--lg" type="button" {% if not meta_configured %}disabled{% endif %}>Conectar con Meta</button>
+  {% endif %}
+  <p id="whatsapp-status" role="status" aria-live="polite" style="margin-top:18px"></p>
+  <p class="muted-note">Usar la API oficial reduce la dependencia de mecanismos no oficiales, pero no garantiza que nunca haya restricciones. Mantén consentimiento de los clientes, usa plantillas aprobadas cuando correspondan y respeta las políticas de Meta y WhatsApp.</p>
+  <p style="margin-top:18px"><a href="{{ url_for('portal.dashboard') }}">Volver a mi empresa</a></p>
+</div></section>
+{% if meta_configured %}
+<script>
+  window.NOXTIUM_META_APP_ID = {{ meta_app_id|tojson }};
+  window.NOXTIUM_META_VERSION = {{ meta_graph_version|tojson }};
+  window.NOXTIUM_META_CONFIG_ID = {{ meta_config_id|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/whatsapp.js') }}"></script>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js"></script>
+{% endif %}
+{% endblock %}

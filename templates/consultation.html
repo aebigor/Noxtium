@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Cuéntanos sobre tu restaurante · NOXTIUM{% endblock %}
+{% block content %}
+<section class="consultation-page">
+  <div class="consultation-shell">
+    <div class="consultation-intro">
+      <span class="eyebrow">NOXTIUM · SOFTWARE A TU MEDIDA</span>
+      <h1>{% if selected_product == 'inventario' %}Hablemos de tu inventario{% elif selected_product == 'imperio-del-barril' %}Cuéntanos sobre tu restaurante{% else %}Hagamos realidad tu idea{% endif %}</h1>
+      <p>Queremos entender cómo funciona tu negocio para recomendarte los módulos correctos. No necesitas contratar todo de una vez: puedes empezar con lo esencial y ampliar cuando estés listo.</p>
+      <div class="consultation-benefits">
+        <div><span>01</span><div><strong>Nos cuentas tu necesidad</strong><small>Qué haces hoy y qué quieres mejorar.</small></div></div>
+        <div><span>02</span><div><strong>Definimos los módulos</strong><small>Solo pagas por lo que tu negocio necesita.</small></div></div>
+        <div><span>03</span><div><strong>Coordinamos la activación</strong><small>Te explicamos precios, pago y siguientes pasos.</small></div></div>
+      </div>
+      <div class="consultation-assurance"><span class="consultation-assurance__icon">✓</span><p><strong>Sin compromiso.</strong> Enviar esta solicitud no genera cobros ni activa automáticamente ningún servicio.</p></div>
+    </div>
+
+    <div class="consultation-form-card">
+      <div class="consultation-form-heading">
+        <span class="form-step">TU PROYECTO</span>
+        <h2>Cuéntanos qué necesitas</h2>
+        <p>Completa los datos y nos pondremos en contacto contigo.</p>
+      </div>
+      <form class="auth-form consultation-form" method="POST" action="{{ url_for('portal.submit_consultation') }}">
+        <input type="hidden" name="selected_product" value="{{ selected_product }}">
+        <div class="form-field">
+          <label for="contact_method">¿Cómo prefieres que te contactemos?</label>
+          <select id="contact_method" name="contact_method" required><option value="whatsapp">WhatsApp</option><option value="email">Correo electrónico</option></select>
+        </div>
+        <div class="form-field">
+          <label for="contact_value">Tu número o correo de contacto</label>
+          <input id="contact_value" name="contact_value" required placeholder="+57 300 000 0000 o correo@empresa.com">
+        </div>
+        <fieldset class="module-picker">
+          <legend>¿Qué módulos te interesan?</legend>
+          <p>Marca uno o varios. También puedes pedir una recomendación.</p>
+          <div class="module-picker__grid">
+            <label class="module-option"><input type="checkbox" name="modules" value="Menú digital"><span class="module-option__icon">☰</span><span><strong>Menú digital</strong><small>Productos, precios y descripciones</small></span></label>
+            <label class="module-option"><input type="checkbox" name="modules" value="Meseros y comandas"><span class="module-option__icon">♧</span><span><strong>Meseros y comandas</strong><small>Pedidos y mesas</small></span></label>
+            <label class="module-option"><input type="checkbox" name="modules" value="Cocina"><span class="module-option__icon">♨</span><span><strong>Cocina</strong><small>Preparación y estado de pedidos</small></span></label>
+            <label class="module-option"><input type="checkbox" name="modules" value="Caja y ventas"><span class="module-option__icon">$</span><span><strong>Caja y ventas</strong><small>Ventas y cierres de turno</small></span></label>
+            <label class="module-option"><input type="checkbox" name="modules" value="Asistencia del personal"><span class="module-option__icon">◷</span><span><strong>Asistencia</strong><small>Entradas y salidas del personal</small></span></label>
+            <label class="module-option"><input type="checkbox" name="modules" value="Inventario y alertas"><span class="module-option__icon">▤</span><span><strong>Inventario y alertas</strong><small>Existencias y bajo stock</small></span></label>
+            <label class="module-option"><input type="checkbox" name="modules" value="Reportes e indicadores"><span class="module-option__icon">▥</span><span><strong>Reportes</strong><small>Indicadores para decidir mejor</small></span></label>
+            <label class="module-option"><input type="checkbox" name="modules" value="Otro / por definir"><span class="module-option__icon">＋</span><span><strong>No estoy seguro</strong><small>Ayúdenme a elegir</small></span></label>
+          </div>
+        </fieldset>
+        <div class="form-field">
+          <label for="business_description">Háblanos de tu negocio</label>
+          <textarea id="business_description" name="business_description" rows="4" placeholder="¿Cómo se llama tu restaurante? ¿Cuántos meseros tienes? ¿Cómo tomas los pedidos hoy? ¿Qué te gustaría automatizar?" maxlength="4000"></textarea>
+          <small class="field-hint">No necesitas responder todo. Cuéntanos lo más importante para ti.</small>
+        </div>
+        <div class="consultation-form__optional">
+          <div class="form-field"><label for="preferred_date">Fecha preferida (opcional)</label><input id="preferred_date" name="preferred_date" placeholder="Ej. 25/10/2026"></div>
+          <div class="form-field"><label for="preferred_time">Horario preferido (opcional)</label><input id="preferred_time" name="preferred_time" placeholder="Ej. después de las 2:00 p. m."></div>
+        </div>
+        <button class="btn btn--primary btn--lg full" type="submit">Enviar solicitud <span aria-hidden="true">→</span></button>
+        <p class="consultation-privacy">Usaremos estos datos únicamente para dar seguimiento a tu solicitud.</p>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

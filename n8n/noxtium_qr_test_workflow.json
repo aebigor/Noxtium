@@ -1,0 +1,168 @@
+{
+  "name": "NOXTIUM - Prueba QR WhatsApp (respuesta fija)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "noxtium-qr-test",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "b95f6b77-6f67-4ef5-9a6c-a011e2d50001",
+      "name": "Webhook NOXTIUM QR",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        0
+      ],
+      "webhookId": "noxtium-qr-test"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "auth-header",
+              "leftValue": "={{ $json.headers.authorization }}",
+              "rightValue": "Bearer REEMPLAZAR_CON_N8N_WEBHOOK_SECRET",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b95f6b77-6f67-4ef5-9a6c-a011e2d50006",
+      "name": "Validar secreto de NOXTIUM",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -370,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition-event",
+              "leftValue": "={{ $json.body.event }}",
+              "rightValue": "whatsapp.message",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b95f6b77-6f67-4ef5-9a6c-a011e2d50002",
+      "name": "¿Es mensaje entrante?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/webhooks/qr-whatsapp/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer REEMPLAZAR_CON_N8N_WEBHOOK_SECRET"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({company_id: $json.body.company?.id, to: $json.body.message?.from, text: '¡Hola! Esta es una respuesta de prueba de NOXTIUM. El mensaje llegó correctamente al flujo de n8n.'}) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b95f6b77-6f67-4ef5-9a6c-a011e2d50003",
+      "name": "Responder por WhatsApp QR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        -80
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook NOXTIUM QR": {
+      "main": [
+        [
+          {
+            "node": "Validar secreto de NOXTIUM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es mensaje entrante?": {
+      "main": [
+        [
+          {
+            "node": "Responder por WhatsApp QR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Validar secreto de NOXTIUM": {
+      "main": [
+        [
+          {
+            "node": "¿Es mensaje entrante?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b95f6b77-6f67-4ef5-9a6c-a011e2d50005",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
