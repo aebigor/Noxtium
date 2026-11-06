@@ -41,46 +41,58 @@ def _google_wallet_ids(customer):
 
 
 def _google_wallet_class(customer, program, session, class_id):
+    """Create or refresh the branded Wallet class for this business."""
     base = "https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass"
+    logo_url = url_for("loyalty.wallet_logo", company_id=customer.company_id, _external=True)
+    hero_url = url_for("loyalty.wallet_hero", company_id=customer.company_id, _external=True)
+    color = program.color if re.fullmatch(r"#[0-9a-fA-F]{6}", program.color or "") else "#333333"
+    business = (program.business_name or "Mi negocio")[:20]
+    visual_fields = {
+        "issuerName": "NOXTIUM",
+        "programName": f"{business} · {(program.title or 'Tarjeta de lealtad')}"[:50],
+        "programLogo": {"sourceUri": {"uri": logo_url}, "contentDescription": {"defaultValue": {"language": "es", "value": f"Logo de {business}"}}},
+        "heroImage": {"sourceUri": {"uri": hero_url}, "contentDescription": {"defaultValue": {"language": "es", "value": f"Tarjeta de fidelización de {business}"}}},
+        "hexBackgroundColor": color,
+        "homepageUri": {"uri": url_for("loyalty.enroll_page", company_id=customer.company_id, _external=True), "description": f"Programa de {business}"},
+    }
     response = session.get(f"{base}/{class_id}", timeout=20)
     if response.status_code == 200:
         class_data = response.json()
         if class_data.get("reviewStatus") != "approved":
             raise RuntimeError("Google recibió la clase de fidelización, pero todavía está en revisión. Espera a que su estado sea APPROVED en Google Wallet Console y vuelve a pulsar el botón.")
+        updated = session.patch(f"{base}/{class_id}", json=visual_fields, timeout=20)
+        if updated.status_code not in (200, 201):
+            raise RuntimeError(f"Google Wallet no pudo actualizar el diseño de la clase ({updated.status_code}): {updated.text[:600]}")
         return
     if response.status_code != 404:
         raise RuntimeError(f"Google Wallet no pudo consultar la clase ({response.status_code}): {response.text[:500]}")
-    logo_url = url_for("loyalty.wallet_logo", company_id=customer.company_id, _external=True)
-    body = {
-        "id": class_id,
-        "issuerName": "NOXTIUM",
-        "programName": (program.business_name or program.title)[:20],
-        "programLogo": {"sourceUri": {"uri": logo_url}, "contentDescription": {"defaultValue": {"language": "es", "value": f"Logo de {program.business_name}"}}},
-        "hexBackgroundColor": program.color if re.fullmatch(r"#[0-9a-fA-F]{6}", program.color or "") else "#333333",
-        "reviewStatus": "UNDER_REVIEW",
-    }
-    created = session.post(base, json=body, timeout=20)
+    created = session.post(base, json={"id": class_id, **visual_fields, "reviewStatus": "UNDER_REVIEW"}, timeout=20)
     if created.status_code not in (200, 201, 409):
         raise RuntimeError(f"Google Wallet no pudo crear la clase ({created.status_code}): {created.text[:700]}")
     class_data = created.json() if created.content else {}
     if class_data.get("reviewStatus") != "approved":
         raise RuntimeError("Se creó la clase de Google Wallet y quedó pendiente de revisión. Cuando Google la marque como APPROVED, vuelve a pulsar Añadir a Google Wallet.")
 
-
 def _google_wallet_object(customer, program, session, class_id, object_id):
     base = "https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject"
-    progress = f"{customer.stamps} de {program.stamps_goal} sellos"
+    goal = max(1, int(program.stamps_goal or 1))
+    stamps = max(0, min(int(customer.stamps or 0), goal))
+    progress = f"{stamps} de {goal} sellos"
+    stamp_symbol = getattr(program, "stamp_icon", None) or "●"
+    visual_progress = " ".join([stamp_symbol if i < stamps else "○" for i in range(goal)])
+    color = program.color if re.fullmatch(r"#[0-9a-fA-F]{6}", program.color or "") else "#333333"
+    hero_url = url_for("loyalty.wallet_hero", company_id=customer.company_id, _external=True)
     body = {
-        "id": object_id,
-        "classId": class_id,
-        "state": "ACTIVE",
-        "accountId": f"cliente-{customer.id}",
-        "accountName": customer.name[:100],
+        "id": object_id, "classId": class_id, "state": "ACTIVE",
+        "accountId": f"cliente-{customer.id}", "accountName": customer.name[:20],
         "barcode": {"type": "QR_CODE", "value": customer.token, "alternateText": "Código de tarjeta NOXTIUM"},
-        "hexBackgroundColor": program.color if re.fullmatch(r"#[0-9a-fA-F]{6}", program.color or "") else "#333333",
+        "hexBackgroundColor": color,
+        "heroImage": {"sourceUri": {"uri": hero_url}, "contentDescription": {"defaultValue": {"language": "es", "value": f"Tarjeta de {program.business_name}"}}},
+        "groupingInfo": {"groupingId": "noxtium_loyalty_cards"},
         "textModulesData": [
-            {"id": "progress", "header": "Progreso", "body": progress},
-            {"id": "reward", "header": "Recompensa", "body": (program.reward_text or "Recompensa disponible")[:500]},
+            {"id": "progress", "header": "Tus sellos", "body": f"{progress}\n{visual_progress}"[:500]},
+            {"id": "reward", "header": "Tu recompensa", "body": (program.reward_text or "Recompensa disponible")[:500]},
+            {"id": "business", "header": "Negocio", "body": (program.business_name or "")[:100]},
         ],
     }
     response = session.get(f"{base}/{object_id}", timeout=20)
@@ -95,7 +107,6 @@ def _google_wallet_object(customer, program, session, class_id, object_id):
     else:
         raise RuntimeError(f"Google Wallet no pudo consultar la tarjeta ({response.status_code}): {response.text[:500]}")
     return body
-
 
 def _google_wallet_save_url(customer, program):
     import google.auth.crypt
@@ -459,6 +470,33 @@ def wallet_logo(company_id):
     draw.text((256,256),initials,fill='white',anchor='mm',stroke_width=1)
     output=io.BytesIO(); image.save(output,format='PNG'); output.seek(0)
     return send_file(output,mimetype='image/png',max_age=86400)
+
+
+@loyalty_bp.get('/google-wallet/hero/<int:company_id>.png')
+def wallet_hero(company_id):
+    """Generate a branded banner from the store's current loyalty design."""
+    program = get_program(company_id)
+    if not program:
+        abort(404)
+    from PIL import Image, ImageDraw, ImageFont
+    from flask import send_file
+    import io
+    color = program.color if re.fullmatch(r"#[0-9a-fA-F]{6}", program.color or "") else "#333333"
+    image = Image.new("RGB", (1032, 336), color)
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((760, -180, 1120, 180), outline="#FFFFFF", width=8)
+    draw.ellipse((820, 140, 1080, 400), outline="#FFFFFF", width=5)
+    try:
+        title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 54)
+        subtitle_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 30)
+    except Exception:
+        title_font = subtitle_font = ImageFont.load_default()
+    draw.text((58, 92), (program.business_name or "NOXTIUM")[:34], fill="white", font=title_font)
+    draw.text((62, 174), (program.title or "Tarjeta de fidelización")[:42], fill="white", font=subtitle_font)
+    output = io.BytesIO()
+    image.save(output, format="PNG", optimize=True)
+    output.seek(0)
+    return send_file(output, mimetype="image/png", max_age=300)
 
 
 @loyalty_bp.get('/google-wallet/<token>')
