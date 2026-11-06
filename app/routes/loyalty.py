@@ -393,6 +393,50 @@ def wallet_service_worker():
     return response
 
 
+@loyalty_bp.route('/mis-tarjetas', methods=['GET', 'POST'])
+def my_cards():
+    """Public customer entry point: locate loyalty cards using the name and phone used at enrollment."""
+    matches = None
+    if request.method == 'POST':
+        name = ' '.join((request.form.get('name') or '').strip().casefold().split())
+        phone = ''.join(ch for ch in (request.form.get('phone') or '') if ch.isdigit())
+        if not name or len(phone) < 7:
+            flash('Escribe el nombre registrado y un teléfono válido.', 'error')
+        else:
+            # Phone formatting can differ between businesses (+57, spaces, hyphens).
+            candidates = LoyaltyCustomer.query.all()
+            phone_matches = [c for c in candidates
+                             if ''.join(ch for ch in (c.phone or '') if ch.isdigit()) == phone]
+            identity_found = any(' '.join((c.name or '').strip().casefold().split()) == name
+                                 for c in phone_matches)
+            if identity_found:
+                matches = []
+                for customer in phone_matches:
+                    program = db.session.get(LoyaltyProgram, customer.program_id)
+                    company = db.session.get(Company, customer.company_id)
+                    if program and company:
+                        matches.append({'customer': customer, 'program': program, 'company': company})
+                matches.sort(key=lambda item: (item['company'].name or '').casefold())
+            else:
+                flash('No encontramos tarjetas con esos datos. Verifica el nombre y el teléfono que usaste al registrarte.', 'error')
+    return render_template('loyalty_my_cards.html', cards=matches)
+
+
+@loyalty_bp.get('/qr-mis-tarjetas/<int:company_id>.png')
+@login_required
+def my_cards_qr(company_id):
+    user = current_user()
+    if user.company_id != company_id or user.role == 'admin':
+        abort(403)
+    import qrcode, io
+    from flask import send_file
+    image = qrcode.make(url_for('loyalty.my_cards', _external=True))
+    buffer = io.BytesIO()
+    image.save(buffer, format='PNG')
+    buffer.seek(0)
+    return send_file(buffer, mimetype='image/png', download_name='qr-buscar-tarjetas.png')
+
+
 @loyalty_bp.get('/tarjeta/<token>')
 def wallet(token):
     customer=LoyaltyCustomer.query.filter_by(token=token).first_or_404()
