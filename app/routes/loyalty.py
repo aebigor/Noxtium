@@ -1,6 +1,9 @@
 from datetime import timedelta
 import json
 import re
+import os
+import time
+import logging
 
 from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from app.database import db
@@ -10,6 +13,133 @@ from app.routes.portal import current_user, login_required
 
 loyalty_bp = Blueprint('loyalty', __name__, url_prefix='/lealtad')
 TRIAL_DAYS = 14
+
+
+def google_wallet_configured():
+    return bool(os.getenv("GOOGLE_WALLET_ISSUER_ID") and os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+
+
+def _google_wallet_client():
+    """Create an authenticated Google Wallet REST session from the service account."""
+    from google.oauth2 import service_account
+    from google.auth.transport.requests import AuthorizedSession
+
+    key_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    if not key_path or not os.path.isfile(key_path):
+        raise RuntimeError("No se encuentra el archivo de credenciales de Google Wallet.")
+    credentials = service_account.Credentials.from_service_account_file(
+        key_path, scopes=["https://www.googleapis.com/auth/wallet_object.issuer"]
+    )
+    return credentials, AuthorizedSession(credentials)
+
+
+def _google_wallet_ids(customer):
+    issuer_id = os.getenv("GOOGLE_WALLET_ISSUER_ID", "").strip()
+    if not issuer_id:
+        raise RuntimeError("Falta GOOGLE_WALLET_ISSUER_ID en el entorno.")
+    return issuer_id, f"{issuer_id}.noxtium_company_{customer.company_id}", f"{issuer_id}.customer_{customer.id}"
+
+
+def _google_wallet_class(customer, program, session, class_id):
+    base = "https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass"
+    response = session.get(f"{base}/{class_id}", timeout=20)
+    if response.status_code == 200:
+        class_data = response.json()
+        if class_data.get("reviewStatus") != "approved":
+            raise RuntimeError("Google recibió la clase de fidelización, pero todavía está en revisión. Espera a que su estado sea APPROVED en Google Wallet Console y vuelve a pulsar el botón.")
+        return
+    if response.status_code != 404:
+        raise RuntimeError(f"Google Wallet no pudo consultar la clase ({response.status_code}): {response.text[:500]}")
+    logo_url = url_for("loyalty.wallet_logo", company_id=customer.company_id, _external=True)
+    body = {
+        "id": class_id,
+        "issuerName": "NOXTIUM",
+        "programName": (program.business_name or program.title)[:20],
+        "programLogo": {"sourceUri": {"uri": logo_url}, "contentDescription": {"defaultValue": {"language": "es", "value": f"Logo de {program.business_name}"}}},
+        "hexBackgroundColor": program.color if re.fullmatch(r"#[0-9a-fA-F]{6}", program.color or "") else "#333333",
+        "reviewStatus": "UNDER_REVIEW",
+    }
+    created = session.post(base, json=body, timeout=20)
+    if created.status_code not in (200, 201, 409):
+        raise RuntimeError(f"Google Wallet no pudo crear la clase ({created.status_code}): {created.text[:700]}")
+    class_data = created.json() if created.content else {}
+    if class_data.get("reviewStatus") != "approved":
+        raise RuntimeError("Se creó la clase de Google Wallet y quedó pendiente de revisión. Cuando Google la marque como APPROVED, vuelve a pulsar Añadir a Google Wallet.")
+
+
+def _google_wallet_object(customer, program, session, class_id, object_id):
+    base = "https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject"
+    progress = f"{customer.stamps} de {program.stamps_goal} sellos"
+    body = {
+        "id": object_id,
+        "classId": class_id,
+        "state": "ACTIVE",
+        "accountId": f"cliente-{customer.id}",
+        "accountName": customer.name[:100],
+        "barcode": {"type": "QR_CODE", "value": customer.token, "alternateText": "Código de tarjeta NOXTIUM"},
+        "hexBackgroundColor": program.color if re.fullmatch(r"#[0-9a-fA-F]{6}", program.color or "") else "#333333",
+        "textModulesData": [
+            {"id": "progress", "header": "Progreso", "body": progress},
+            {"id": "reward", "header": "Recompensa", "body": (program.reward_text or "Recompensa disponible")[:500]},
+        ],
+    }
+    response = session.get(f"{base}/{object_id}", timeout=20)
+    if response.status_code == 404:
+        created = session.post(base, json=body, timeout=20)
+        if created.status_code not in (200, 201, 409):
+            raise RuntimeError(f"Google Wallet no pudo crear la tarjeta ({created.status_code}): {created.text[:700]}")
+    elif response.status_code == 200:
+        updated = session.patch(f"{base}/{object_id}", json=body, timeout=20)
+        if updated.status_code not in (200, 201):
+            raise RuntimeError(f"Google Wallet no pudo actualizar la tarjeta ({updated.status_code}): {updated.text[:700]}")
+    else:
+        raise RuntimeError(f"Google Wallet no pudo consultar la tarjeta ({response.status_code}): {response.text[:500]}")
+    return body
+
+
+def _google_wallet_save_url(customer, program):
+    import google.auth.crypt
+    import google.auth.jwt
+
+    credentials, session = _google_wallet_client()
+    _issuer, class_id, object_id = _google_wallet_ids(customer)
+    _google_wallet_class(customer, program, session, class_id)
+    wallet_object = _google_wallet_object(customer, program, session, class_id, object_id)
+    signer = google.auth.crypt.RSASigner.from_service_account_file(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
+    claims = {
+        "iss": credentials.service_account_email,
+        "aud": "google",
+        "typ": "savetowallet",
+        "iat": int(time.time()),
+        "origins": [request.host_url.rstrip("/")],
+        "payload": {"loyaltyObjects": [wallet_object]},
+    }
+    token = google.auth.jwt.encode(signer, claims).decode("utf-8")
+    return f"https://pay.google.com/gp/v/save/{token}"
+
+
+def _sync_google_wallet_customer(customer):
+    """Best-effort sync after a stamp; never roll back the loyalty transaction."""
+    if not google_wallet_configured():
+        return
+    try:
+        _credentials, session = _google_wallet_client()
+        _issuer, class_id, object_id = _google_wallet_ids(customer)
+        program = db.session.get(LoyaltyProgram, customer.program_id)
+        if not program:
+            return
+        response = session.get(f"https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/{object_id}", timeout=15)
+        if response.status_code == 404:
+            return  # The customer has not added the pass yet.
+        if response.status_code != 200:
+            raise RuntimeError(f"Consulta de pase: {response.status_code} {response.text[:300]}")
+        body = _google_wallet_object(customer, program, session, class_id, object_id)
+        updated = session.patch(f"https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/{object_id}", json=body, timeout=15)
+        if updated.status_code not in (200, 201):
+            raise RuntimeError(f"Actualización de pase: {updated.status_code} {updated.text[:300]}")
+    except Exception:
+        current_app.logger.exception("No se pudo sincronizar la tarjeta de Google Wallet del cliente %s", customer.id)
+
 
 
 def get_program(company_id, create=False):
@@ -267,7 +397,38 @@ def wallet_service_worker():
 def wallet(token):
     customer=LoyaltyCustomer.query.filter_by(token=token).first_or_404()
     program=db.session.get(LoyaltyProgram, customer.program_id)
-    return render_template('loyalty_wallet.html', customer=customer, program=program)
+    return render_template('loyalty_wallet.html', customer=customer, program=program,
+                           google_wallet_enabled=google_wallet_configured())
+
+
+@loyalty_bp.get('/google-wallet/logo/<int:company_id>.png')
+def wallet_logo(company_id):
+    program=get_program(company_id)
+    if not program: abort(404)
+    from PIL import Image, ImageDraw
+    from flask import send_file
+    import io
+    image=Image.new('RGB',(512,512),program.color if re.fullmatch(r"#[0-9a-fA-F]{6}", program.color or "") else "#333333")
+    draw=ImageDraw.Draw(image)
+    initials=''.join(part[0] for part in (program.business_name or 'NOXTIUM').split()[:2]).upper() or 'N'
+    draw.ellipse((76,76,436,436),outline='white',width=14)
+    draw.text((256,256),initials,fill='white',anchor='mm',stroke_width=1)
+    output=io.BytesIO(); image.save(output,format='PNG'); output.seek(0)
+    return send_file(output,mimetype='image/png',max_age=86400)
+
+
+@loyalty_bp.get('/google-wallet/<token>')
+def add_to_google_wallet(token):
+    customer=LoyaltyCustomer.query.filter_by(token=token).first_or_404()
+    program=db.session.get(LoyaltyProgram, customer.program_id)
+    if not google_wallet_configured():
+        abort(503, description='Google Wallet no está configurado en el servidor.')
+    try:
+        return redirect(_google_wallet_save_url(customer, program))
+    except Exception as exc:
+        current_app.logger.exception('Error generando pase Google Wallet para cliente %s', customer.id)
+        flash(f'No se pudo preparar Google Wallet: {str(exc)[:220]}', 'error')
+        return redirect(url_for('loyalty.wallet', token=token))
 
 
 @loyalty_bp.get('/qr/<token>.png')
@@ -356,6 +517,7 @@ def stamp(token):
     db.session.add(LoyaltyStamp(company_id=user.company_id, customer_id=customer.id, approved_by_user_id=user.id))
     customer.stamps += 1; customer.last_visit_at=utcnow()
     db.session.commit()
+    _sync_google_wallet_customer(customer)
     flash('Sello aprobado y visita registrada.', 'success')
     return redirect(url_for('loyalty.dashboard'))
 

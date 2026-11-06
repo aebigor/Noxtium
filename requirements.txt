@@ -6,6 +6,6 @@ psycopg[binary]>=3.2,<4
 requests>=2.32,<3
 cryptography>=46,<47
 python-dotenv>=1.1,<2
-
+google-auth>=2.40,<3
 qrcode[pil]>=8.0,<9
 pywebpush>=2.0,<3
