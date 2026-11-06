@@ -54,11 +54,14 @@ def _google_wallet_class(customer, program, session, class_id):
         "heroImage": {"sourceUri": {"uri": hero_url}, "contentDescription": {"defaultValue": {"language": "es", "value": f"Tarjeta de fidelización de {business}"}}},
         "hexBackgroundColor": color,
         "homepageUri": {"uri": url_for("loyalty.enroll_page", company_id=customer.company_id, _external=True), "description": f"Programa de {business}"},
+        # Google requires UNDER_REVIEW on updates to an already approved class.
+        # APPROVED is assigned by Google and cannot be sent by the issuer.
+        "reviewStatus": "UNDER_REVIEW",
     }
     response = session.get(f"{base}/{class_id}", timeout=20)
     if response.status_code == 200:
         class_data = response.json()
-        if class_data.get("reviewStatus") != "approved":
+        if str(class_data.get("reviewStatus", "")).upper() != "APPROVED":
             raise RuntimeError("Google recibió la clase de fidelización, pero todavía está en revisión. Espera a que su estado sea APPROVED en Google Wallet Console y vuelve a pulsar el botón.")
         updated = session.patch(f"{base}/{class_id}", json=visual_fields, timeout=20)
         if updated.status_code not in (200, 201):
@@ -70,7 +73,7 @@ def _google_wallet_class(customer, program, session, class_id):
     if created.status_code not in (200, 201, 409):
         raise RuntimeError(f"Google Wallet no pudo crear la clase ({created.status_code}): {created.text[:700]}")
     class_data = created.json() if created.content else {}
-    if class_data.get("reviewStatus") != "approved":
+    if str(class_data.get("reviewStatus", "")).upper() != "APPROVED":
         raise RuntimeError("Se creó la clase de Google Wallet y quedó pendiente de revisión. Cuando Google la marque como APPROVED, vuelve a pulsar Añadir a Google Wallet.")
 
 def _google_wallet_object(customer, program, session, class_id, object_id):
