@@ -22,14 +22,20 @@
           <a href="{{ url_for('portal.admin_dashboard') }}">Pagos y solicitudes</a>
           <a href="{{ url_for('portal.admin_companies') }}">Empresas</a>
         {% else %}
-          <a href="{{ url_for('portal.dashboard') }}">Mi empresa</a>
-          <a class="navbar__upgrade" href="{{ url_for('inicio') }}#herramientas">Actualizar plan / agregar servicios</a>
-          {% if current_subscription %}
-          <a href="{{ url_for('meta.whatsapp_page') }}">WhatsApp Business</a>
-          <a href="{{ url_for('portal.agent_setup') }}">Configurar agente</a>
-          <a href="{{ url_for('portal.crm_contacts') }}">CRM</a>
-          {% endif %}
-          <a class="navbar__support" href="{{ url_for('soporte') }}">Chat en vivo · Soporte</a>
+          <details class="nav-dropdown">
+            <summary>Panel <span class="nav-dropdown__chevron" aria-hidden="true">▾</span></summary>
+            <div class="nav-dropdown__menu">
+              <a href="{{ url_for('portal.dashboard') }}"><span>🏠</span><span><strong>Mi empresa</strong><small>Resumen y productos contratados</small></span></a>
+              <a href="{{ url_for('loyalty.dashboard') }}"><span>🎟️</span><span><strong>Tarjetas de fidelización</strong><small>Clientes, sellos y recompensas</small></span></a>
+              {% if current_subscription %}
+                <a href="{{ url_for('portal.crm_contacts') }}"><span>🤖</span><span><strong>CRM y clientes</strong><small>Contactos y seguimiento comercial</small></span></a>
+                <a href="{{ url_for('meta.whatsapp_page') }}"><span>💬</span><span><strong>WhatsApp Business</strong><small>Conexión y conversaciones</small></span></a>
+                <a href="{{ url_for('portal.agent_setup') }}"><span>⚙️</span><span><strong>Configurar agente</strong><small>Catálogo y automatizaciones</small></span></a>
+              {% endif %}
+            </div>
+          </details>
+          <a class="navbar__upgrade" href="{{ url_for('inicio') }}#herramientas">Agregar servicios</a>
+          <a class="navbar__support" href="{{ url_for('soporte') }}">Soporte</a>
         {% endif %}
       {% else %}
         <a href="{{ url_for('inicio') }}#inicio">Inicio</a>
