@@ -245,7 +245,7 @@ class LoyaltyProgram(db.Model):
     color = db.Column(db.String(7), nullable=False, default="#6d5dfc")
     stamps_goal = db.Column(db.Integer, nullable=False, default=5)
     reward_text = db.Column(db.String(255), nullable=False, default="Obtén una recompensa")
-    trial_started_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    trial_started_at = db.Column(db.DateTime(timezone=True), nullable=True, default=None)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
 
 class LoyaltyCustomer(db.Model):
@@ -302,6 +302,7 @@ class LoyaltyPushSubscription(db.Model):
 
 class LoyaltyPlanPurchase(db.Model):
     __tablename__ = "loyalty_plan_purchases"
+    company = db.relationship("Company")
     id = db.Column(db.Integer, primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     plan_code = db.Column(db.String(30), nullable=False)

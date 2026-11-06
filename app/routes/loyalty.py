@@ -22,6 +22,9 @@ def get_program(company_id, create=False):
 
 
 def trial_status(program):
+    # A demo only starts after an administrator approves the explicit request.
+    if not program or not program.trial_started_at:
+        return None, False, 0
     end = program.trial_started_at + timedelta(days=TRIAL_DAYS)
     remaining = max(0, (end - utcnow()).total_seconds())
     return end, remaining > 0, int((remaining + 86399) // 86400)
@@ -35,7 +38,7 @@ def dashboard():
     if user.role == 'admin': abort(403)
     program = get_program(user.company_id, create=True)
     end, active, days = trial_status(program)
-    paid = LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id, status='ACTIVE').filter(LoyaltyPlanPurchase.expires_at > utcnow()).first() is not None
+    paid = LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id, status='ACTIVE').filter(LoyaltyPlanPurchase.plan_code != 'trial14', LoyaltyPlanPurchase.expires_at > utcnow()).first() is not None
     if not active and not paid: return redirect(url_for('loyalty.pricing'))
     customers = LoyaltyCustomer.query.filter_by(company_id=user.company_id).order_by(LoyaltyCustomer.last_visit_at.asc().nullsfirst()).all()
     stale_count = sum(1 for c in customers if not c.last_visit_at or c.last_visit_at < utcnow()-timedelta(days=30))
@@ -50,6 +53,10 @@ def configure():
     user=current_user()
     if user.role == 'admin': abort(403)
     program=get_program(user.company_id, create=True)
+    end, active, _days = trial_status(program)
+    paid=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.plan_code != 'trial14', LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
+    if not active and not paid:
+        return redirect(url_for('loyalty.pricing'))
     if request.method == 'POST':
         program.business_name=(request.form.get('business_name') or '').strip()[:150] or program.business_name
         program.title=(request.form.get('title') or 'Tarjeta de lealtad').strip()[:120]
@@ -68,7 +75,33 @@ def configure():
 @loyalty_bp.get('/precios')
 def pricing():
     user=current_user()
-    return render_template('loyalty_pricing.html', user=user)
+    trial_request = None
+    if user and user.role != 'admin':
+        get_program(user.company_id, create=True)
+        trial_request = (LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id, plan_code='trial14')
+                         .order_by(LoyaltyPlanPurchase.created_at.desc()).first())
+    trial_active=False; trial_days_left=0
+    if user and user.role != 'admin':
+        _end, trial_active, trial_days_left = trial_status(get_program(user.company_id))
+    return render_template('loyalty_pricing.html', user=user, trial_request=trial_request,
+                           trial_active=trial_active, trial_days_left=trial_days_left)
+
+
+@loyalty_bp.post('/demo/solicitar')
+@login_required
+def request_trial():
+    user=current_user()
+    if user.role == 'admin': abort(403)
+    program=get_program(user.company_id, create=True)
+    existing=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id, plan_code='trial14').first()
+    if existing:
+        flash('Tu empresa ya registró una solicitud o utilizó su demostración de 14 días.', 'warning')
+        return redirect(url_for('loyalty.pricing'))
+    purchase=LoyaltyPlanPurchase(company_id=user.company_id, plan_code='trial14', amount=0, status='PENDING')
+    db.session.add(purchase)
+    db.session.commit()
+    flash('Solicitud de demostración enviada. Los 14 días comenzarán cuando NOXTIUM la apruebe.', 'success')
+    return redirect(url_for('loyalty.pricing'))
 
 
 @loyalty_bp.post('/contratar')
@@ -141,9 +174,23 @@ def approve_payment(purchase_id):
     user=current_user()
     if user.role != 'admin': abort(403)
     purchase=db.session.get(LoyaltyPlanPurchase,purchase_id)
-    if not purchase or purchase.status != 'UNDER_REVIEW': abort(404)
-    duration=183 if purchase.plan_code=='six_months' else 30
+    if not purchase: abort(404)
+    if purchase.plan_code == 'trial14' and purchase.status != 'PENDING': abort(404)
+    if purchase.plan_code != 'trial14' and purchase.status != 'UNDER_REVIEW': abort(404)
     now=utcnow()
+    if purchase.plan_code == 'trial14':
+        program=get_program(purchase.company_id, create=True)
+        if program.trial_started_at:
+            flash('Esta empresa ya tiene una demostración iniciada.', 'warning')
+            return redirect(url_for('loyalty.admin_payments'))
+        program.trial_started_at=now
+        purchase.starts_at=now
+        purchase.expires_at=now+timedelta(days=TRIAL_DAYS)
+        purchase.status='ACTIVE'
+        db.session.commit()
+        flash('Demostración de 14 días aprobada. El conteo comenzó en este momento.', 'success')
+        return redirect(url_for('loyalty.admin_payments'))
+    duration=183 if purchase.plan_code=='six_months' else 30
     current=LoyaltyPlanPurchase.query.filter_by(company_id=purchase.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.expires_at>now).order_by(LoyaltyPlanPurchase.expires_at.desc()).first()
     purchase.starts_at=max(now,current.expires_at) if current and current.expires_at else now
     purchase.expires_at=purchase.starts_at+timedelta(days=duration)
@@ -158,7 +205,7 @@ def enroll(company_id):
     program=get_program(company_id)
     if not program: abort(404)
     end,active,days=trial_status(program)
-    paid=LoyaltyPlanPurchase.query.filter_by(company_id=company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
+    paid=LoyaltyPlanPurchase.query.filter_by(company_id=company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.plan_code != 'trial14', LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
     if not active and not paid:
         return render_template('loyalty_public_expired.html', program=program), 402
     name=(request.form.get('name') or '').strip()[:150]
@@ -251,7 +298,7 @@ def stamp_page(token):
     customer=LoyaltyCustomer.query.filter_by(token=token, company_id=user.company_id).first_or_404()
     program=get_program(user.company_id)
     end,active,days=trial_status(program)
-    paid=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
+    paid=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.plan_code != 'trial14', LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
     if not active and not paid: return redirect(url_for('loyalty.pricing'))
     return render_template('loyalty_stamp.html', customer=customer, program=program)
 
@@ -263,7 +310,7 @@ def stamp(token):
     if user.role == 'admin': abort(403)
     program=get_program(user.company_id)
     end,active,days=trial_status(program)
-    paid=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
+    paid=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.plan_code != 'trial14', LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
     if not active and not paid: return redirect(url_for('loyalty.pricing'))
     customer=LoyaltyCustomer.query.filter_by(token=token, company_id=user.company_id).first_or_404()
     db.session.add(LoyaltyStamp(company_id=user.company_id, customer_id=customer.id, approved_by_user_id=user.id))
@@ -280,7 +327,7 @@ def campaigns():
     if user.role == 'admin': abort(403)
     program=get_program(user.company_id, create=True)
     end,active,days=trial_status(program)
-    paid=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
+    paid=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.plan_code != 'trial14', LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
     if not active and not paid: return redirect(url_for('loyalty.pricing'))
     customers=LoyaltyCustomer.query.filter_by(company_id=user.company_id).order_by(LoyaltyCustomer.name.asc()).all()
     if request.method=='POST':
