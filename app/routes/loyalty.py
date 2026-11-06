@@ -1,5 +1,6 @@
 from datetime import timedelta
 import json
+import re
 
 from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, url_for
 from app.database import db
@@ -61,6 +62,7 @@ def configure():
         program.business_name=(request.form.get('business_name') or '').strip()[:150] or program.business_name
         program.title=(request.form.get('title') or 'Tarjeta de lealtad').strip()[:120]
         program.icon=(request.form.get('icon') or '⭐')[:20]
+        program.stamp_icon=(request.form.get('stamp_icon') or '✦')[:20]
         color=(request.form.get('color') or '#6d5dfc').strip()
         import re
         if re.fullmatch(r'#[0-9a-fA-F]{6}', color): program.color=color
@@ -288,6 +290,44 @@ def business_qr(company_id):
     img=qrcode.make(url_for('loyalty.enroll_page', company_id=company_id, _external=True))
     buf=io.BytesIO(); img.save(buf, format='PNG'); buf.seek(0)
     return send_file(buf, mimetype='image/png', download_name='qr-inscripcion.png')
+
+
+@loyalty_bp.get('/escanear')
+@login_required
+def scan_page():
+    user=current_user()
+    if user.role == 'admin': abort(403)
+    program=get_program(user.company_id)
+    end,active,days=trial_status(program)
+    paid=LoyaltyPlanPurchase.query.filter_by(company_id=user.company_id,status='ACTIVE').filter(LoyaltyPlanPurchase.plan_code != 'trial14', LoyaltyPlanPurchase.expires_at>utcnow()).first() is not None
+    if not active and not paid: return redirect(url_for('loyalty.pricing'))
+    return render_template('loyalty_scan.html')
+
+
+@loyalty_bp.post('/escanear/buscar')
+@login_required
+def scan_lookup():
+    user=current_user()
+    if user.role == 'admin': abort(403)
+    data=request.get_json(silent=True) or {}
+    token=(data.get('token') or '').strip()
+    if not re.fullmatch(r'[a-fA-F0-9]{32,64}', token):
+        return jsonify(ok=False, message='El QR no corresponde a una tarjeta válida.'), 400
+    customer=LoyaltyCustomer.query.filter_by(token=token, company_id=user.company_id).first()
+    if not customer:
+        return jsonify(ok=False, message='Esta tarjeta no pertenece a tu negocio o no existe.'), 404
+    return jsonify(ok=True, name=customer.name, phone=customer.phone,
+                   stamps=customer.stamps, goal=customer.program_id and db.session.get(LoyaltyProgram, customer.program_id).stamps_goal,
+                   icon=db.session.get(LoyaltyProgram, customer.program_id).stamp_icon,
+                   confirm_url=url_for('loyalty.stamp_page', token=customer.token))
+
+
+@loyalty_bp.get('/tarjeta-datos/<token>')
+def wallet_data(token):
+    customer=LoyaltyCustomer.query.filter_by(token=token).first_or_404()
+    program=db.session.get(LoyaltyProgram, customer.program_id)
+    return jsonify(stamps=customer.stamps, goal=program.stamps_goal, stamp_icon=program.stamp_icon,
+                   reward_text=program.reward_text, updated_at=customer.last_visit_at.isoformat() if customer.last_visit_at else None)
 
 
 @loyalty_bp.get('/sellar/<token>')

@@ -27,6 +27,7 @@
             <div class="nav-dropdown__menu">
               <a href="{{ url_for('portal.dashboard') }}"><span>🏠</span><span><strong>Mi empresa</strong><small>Resumen y productos contratados</small></span></a>
               <a href="{{ url_for('loyalty.dashboard') }}"><span>🎟️</span><span><strong>Tarjetas de fidelización</strong><small>Clientes, sellos y recompensas</small></span></a>
+              <a href="{{ url_for('loyalty.scan_page') }}"><span>📷</span><span><strong>Escanear tarjeta</strong><small>Registrar sellos con el QR</small></span></a>
               {% if current_subscription %}
                 <a href="{{ url_for('portal.crm_contacts') }}"><span>🤖</span><span><strong>CRM y clientes</strong><small>Contactos y seguimiento comercial</small></span></a>
                 <a href="{{ url_for('meta.whatsapp_page') }}"><span>💬</span><span><strong>WhatsApp Business</strong><small>Conexión y conversaciones</small></span></a>

@@ -242,6 +242,7 @@ class LoyaltyProgram(db.Model):
     title = db.Column(db.String(120), nullable=False, default="Tarjeta de lealtad")
     business_name = db.Column(db.String(150), nullable=False)
     icon = db.Column(db.String(20), nullable=False, default="⭐")
+    stamp_icon = db.Column(db.String(20), nullable=False, default="✦")
     color = db.Column(db.String(7), nullable=False, default="#6d5dfc")
     stamps_goal = db.Column(db.Integer, nullable=False, default=5)
     reward_text = db.Column(db.String(255), nullable=False, default="Obtén una recompensa")
