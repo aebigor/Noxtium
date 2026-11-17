@@ -1,0 +1,35 @@
+NOXTIUM — PARCHE DE MIGRACIÓN A WHATSAPP BUSINESS PLATFORM OFICIAL
+
+Tipo de entrega: parche incremental para copiar sobre una copia de seguridad del proyecto.
+No es un proyecto completo. No incluye .env real, base de datos, sesiones, node_modules, claves ni comprobantes.
+
+Archivos que reemplaza:
+- .env.example
+- README.md
+- README_IMPLEMENTACION_AGENTE.md
+- README_QR_N8N.md
+- config.py
+- app/routes/meta.py
+- app/routes/webhooks.py
+- app/routes/qr_whatsapp.py
+- app/routes/portal.py
+- app/services/meta_service.py
+- templates/base.html
+- templates/dashboard.html
+- templates/agent_setup.html
+- templates/index.html
+- templates/whatsapp.html (nueva pantalla oficial de Meta)
+- static/js/whatsapp.js
+
+Archivo nuevo:
+- README_META_OFFICIAL.md (configuración paso a paso de Meta, webhooks y n8n)
+- whatsapp_service/README_LEGACY_QR.md (aviso de que Baileys ya no se usa en el flujo activo)
+
+No borra las tablas QR ni modifica el esquema PostgreSQL. Las conexiones QR antiguas se dejan como historial. El flujo normal ahora usa Embedded Signup + WhatsApp Cloud API de Meta.
+
+Antes de aplicarlo:
+1. Detén Flask y el servicio Node QR.
+2. Haz copia de seguridad del proyecto y de PostgreSQL.
+3. Extrae/copia los archivos del ZIP sobre la raíz actual, conservando las carpetas.
+4. No reemplaces tu .env real por .env.example.
+5. Sigue README_META_OFFICIAL.md y configura las credenciales reales en Meta for Developers.
